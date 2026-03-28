@@ -48,6 +48,7 @@ export type SchemaAction =
   | { type: 'RENAME_VIEW'; viewId: string; name: string }
   | { type: 'SWITCH_VIEW'; viewId: string }
   | { type: 'REORDER_VIEWS'; viewIds: string[] }
+  | { type: 'RESET_SESSION' }
   | { type: 'LOAD_STATE'; state: SchemaState }
 
 const defaultView: SchemaView = {
@@ -359,6 +360,14 @@ export function schemaReducer(state: SchemaState, action: SchemaAction): SchemaS
         ...state,
         views: newViews,
       }
+    }
+
+    case 'RESET_SESSION': {
+      // Clear localStorage and return to initial state
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(STORAGE_KEY)
+      }
+      return initialState
     }
 
     default:

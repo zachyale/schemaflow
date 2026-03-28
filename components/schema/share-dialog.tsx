@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { useSchema, getActiveView } from '@/lib/schema-store'
-import { compressToEncodedURIComponent } from 'lz-string'
+import { compressToUrl } from '@/lib/compression'
 
 interface ShareDialogProps {
   open: boolean
@@ -67,9 +67,9 @@ export function ShareDialog({ open, onOpenChange }: ShareDialogProps) {
     }
 
     const json = JSON.stringify(selectedViews, null, 2)
-    const compressed = compressToEncodedURIComponent(JSON.stringify(selectedViews))
+    const compressed = compressToUrl(JSON.stringify(selectedViews))
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
-    const url = `${baseUrl}?share=${compressed}`
+    const url = `${baseUrl}?s=${compressed}`
 
     return {
       url,

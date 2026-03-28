@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Link2, MoreHorizontal, Plus, RotateCcw, Share2, Upload, PanelRight, ZoomIn } from 'lucide-react'
+import { Link2, MoreHorizontal, Plus, RotateCcw, Share2, Trash2, Upload, PanelRight, ZoomIn } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSchema, generateId, validateSchema, getActiveView } from '@/lib/schema-store'
 import type { Model } from '@/lib/schema-types'
@@ -87,6 +87,12 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
   const handleResetZoom = () => {
     dispatch({ type: 'SET_CANVAS_OFFSET', offset: { x: 0, y: 0 } })
     dispatch({ type: 'SET_CANVAS_SCALE', scale: 1 })
+  }
+
+  const handleResetSession = () => {
+    if (confirm('This will clear all views and reset to the default state. Continue?')) {
+      dispatch({ type: 'RESET_SESSION' })
+    }
   }
 
   const handleImport = () => {
@@ -178,6 +184,11 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
             <DropdownMenuItem onClick={handleResetZoom}>
               <ZoomIn className="h-4 w-4 mr-2" />
               Reset Zoom
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleResetSession} className="text-destructive focus:text-destructive">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Reset Session
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
