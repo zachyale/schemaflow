@@ -168,20 +168,17 @@ export function Canvas() {
         onTouchStart={handleBackgroundTouchStart}
       />
 
-      {/* Canvas content container */}
+      {/* Canvas content container - single transform for both lines and cards */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          transform: `translate(${state.canvasOffset.x * state.canvasScale}px, ${state.canvasOffset.y * state.canvasScale}px)`,
+          transform: `scale(${state.canvasScale}) translate(${state.canvasOffset.x}px, ${state.canvasOffset.y}px)`,
+          transformOrigin: 'top left',
         }}
       >
         {/* SVG layer for relationship lines */}
         <svg
           className="absolute inset-0 w-full h-full overflow-visible"
-          style={{
-            transform: `scale(${state.canvasScale})`,
-            transformOrigin: 'top left',
-          }}
         >
           <RelationshipLines />
         </svg>
@@ -189,7 +186,7 @@ export function Canvas() {
         {/* Model cards layer */}
         <div className="pointer-events-auto">
           {state.schema.models.map((model) => (
-            <ModelCard key={model.id} model={model} scale={state.canvasScale} />
+            <ModelCard key={model.id} model={model} />
           ))}
         </div>
       </div>
