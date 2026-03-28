@@ -85,6 +85,7 @@ function cleanSql(sql: string): string {
 
 function mapSqlType(typeText: string): string {
   const type = typeText.toLowerCase()
+  if (/tinyint\s*\(\s*1\s*\)/i.test(typeText)) return 'boolean'
   if (type.includes('uuid')) return 'uuid'
   if (type.includes('bigint')) return 'bigint'
   if (type.includes('smallint') || type.includes('int') || type.includes('serial')) return 'integer'
@@ -170,6 +171,16 @@ function parseCreateTable(statement: string): {
       continue
     }
 
+    const isTableConstraint =
+      /^\s*unique\s*\(/i.test(segment) ||
+      /^\s*check\s*\(/i.test(segment) ||
+      /^\s*constraint\s+[^\s]+\s+unique\s*\(/i.test(segment) ||
+      /^\s*constraint\s+[^\s]+\s+check\s*\(/i.test(segment)
+
+    if (isTableConstraint) {
+      continue
+    }
+
     const colMatch = segment.match(/^([`"\[\]A-Za-z0-9_.-]+)\s+(.+)$/)
     if (!colMatch) continue
 
@@ -186,6 +197,10 @@ function parseCreateTable(statement: string): {
       nullable: !/\bnot\s+null\b/i.test(definition),
       primaryKey: /\bprimary\s+key\b/i.test(definition),
       foreignKey: /\breferences\b/i.test(definition),
+    }
+
+    if (field.primaryKey) {
+      field.nullable = false
     }
 
     const inlineFkMatch = definition.match(/references\s+([^\s(]+)\s*\(([^)]+)\)/i)
@@ -262,6 +277,7 @@ export function parseSqlSchema(sql: string): { valid: boolean; error?: string; s
   })
 
   const relationships: Relationship[] = []
+  const relationshipKeys = new Set<string>()
   let relCounter = 0
 
   for (const table of parsedTables) {
@@ -287,6 +303,10 @@ export function parseSqlSchema(sql: string): { valid: boolean; error?: string; s
         if (!sourceField || !targetField) continue
 
         sourceField.foreignKey = true
+        const relKey = `${sourceModel.id}:${sourceField.id}->${targetModel.id}:${targetField.id}`
+        if (relationshipKeys.has(relKey)) continue
+        relationshipKeys.add(relKey)
+
         relCounter += 1
         relationships.push({
           id: `rel-${relCounter}`,
