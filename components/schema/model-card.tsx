@@ -377,10 +377,10 @@ export function ModelCard({ model }: ModelCardProps) {
                 <span className="text-xs text-muted-foreground">{field.type}</span>
                 <div className="flex items-center gap-1">
                   {field.primaryKey && (
-                    <Key className="h-3 w-3 text-primary" title="Primary Key" />
+                    <Key className="h-3 w-3 text-primary" />
                   )}
                   {field.foreignKey && (
-                    <Link className="h-3 w-3 text-accent" title="Foreign Key" />
+                    <Link className="h-3 w-3 text-accent" />
                   )}
                 </div>
               </div>

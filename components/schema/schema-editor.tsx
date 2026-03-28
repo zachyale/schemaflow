@@ -82,7 +82,6 @@ export function SchemaEditor() {
   const [state, dispatch] = useReducer(schemaReducer, initialState)
   const [addRelOpen, setAddRelOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
-  const [inspectorOpen, setInspectorOpen] = useState(true)
   const [mounted, setMounted] = useState(false)
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -172,8 +171,6 @@ export function SchemaEditor() {
         <Toolbar 
           onAddRelationship={() => setAddRelOpen(true)}
           onShare={() => setShareOpen(true)}
-          inspectorOpen={inspectorOpen}
-          onToggleInspector={() => setInspectorOpen(!inspectorOpen)}
         />
         
         <ViewTabs />
@@ -181,7 +178,7 @@ export function SchemaEditor() {
         <div className="flex flex-1 overflow-hidden">
           <ModelSidebar />
           <Canvas />
-          {inspectorOpen && <InspectorPanel />}
+          <InspectorPanel />
         </div>
 
         <AddRelationshipDialog open={addRelOpen} onOpenChange={setAddRelOpen} />

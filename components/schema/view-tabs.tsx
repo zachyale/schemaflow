@@ -167,10 +167,10 @@ export function ViewTabs() {
           onDrop={(e) => handleDrop(e, view.id)}
           onDragEnd={handleDragEnd}
           className={cn(
-            'group flex items-center gap-1 rounded px-2 py-1 text-sm cursor-pointer transition-all',
+            'group flex items-center gap-1 rounded-md border px-2 py-1 text-sm cursor-pointer transition-all',
             view.id === state.activeViewId
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:bg-background/50 hover:text-foreground',
+              ? 'border-border bg-background text-foreground shadow-sm'
+              : 'border-border/70 bg-muted/20 text-muted-foreground hover:bg-muted/35 hover:text-foreground',
             draggedId === view.id && 'opacity-50',
             dragOverId === view.id && draggedId !== view.id && 'ring-2 ring-primary ring-offset-1'
           )}
@@ -222,7 +222,12 @@ export function ViewTabs() {
                   }
                   handleStartRename(view)
                 }}
-                className="max-w-32 truncate rounded px-1 py-0.5 text-left hover:bg-secondary/70 transition-colors"
+                className={cn(
+                  'max-w-32 truncate rounded px-1 py-0.5 text-left transition-colors',
+                  view.id === state.activeViewId
+                    ? 'hover:bg-background hover:ring-1 hover:ring-border/80'
+                    : 'hover:bg-transparent'
+                )}
                 title="Rename view"
               >
                 {view.name}

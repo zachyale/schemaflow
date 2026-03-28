@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Link2, MoreHorizontal, Plus, RotateCcw, Share2, Trash2, Upload, PanelRight, ZoomIn } from 'lucide-react'
+import { Link2, Monitor, Moon, MoreHorizontal, Plus, RotateCcw, Share2, Sun, Trash2, Upload, ZoomIn } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { useSchema, generateId, validateSchema, getActiveView } from '@/lib/schema-store'
 import type { Model } from '@/lib/schema-types'
@@ -17,23 +18,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import { Textarea } from '@/components/ui/textarea'
-import { ThemeToggle } from '@/components/theme-toggle'
 
 interface ToolbarProps {
   onAddRelationship: () => void
   onShare: () => void
-  inspectorOpen: boolean
-  onToggleInspector: () => void
 }
 
 const SAMPLE_SCHEMA = `{
@@ -51,8 +44,9 @@ const SAMPLE_SCHEMA = `{
   "relationships": []
 }`
 
-export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleInspector }: ToolbarProps) {
+export function Toolbar({ onAddRelationship, onShare }: ToolbarProps) {
   const { state, dispatch } = useSchema()
+  const { setTheme } = useTheme()
   const activeView = getActiveView(state)
   const [importOpen, setImportOpen] = useState(false)
   const [importJson, setImportJson] = useState('')
@@ -113,7 +107,7 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
   }
 
   return (
-    <TooltipProvider delayDuration={400}>
+    <>
       <div className="flex items-center gap-1 border-b bg-card px-3 py-1.5">
         {/* Logo */}
         <div className="flex items-center gap-1.5 mr-2">
@@ -125,58 +119,48 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
 
         <div className="h-4 w-px bg-border" />
 
-        {/* Primary Actions - Icon Only */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleAddModel}>
-              <Plus className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Add Model</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onAddRelationship}>
-              <Link2 className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Add Relationship</TooltipContent>
-        </Tooltip>
-
-        <div className="h-4 w-px bg-border" />
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setImportOpen(true)}>
-              <Upload className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Import</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onShare}>
-              <Share2 className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Share & Export</TooltipContent>
-        </Tooltip>
-
-        {/* More Menu */}
+        {/* Add / Import Menu */}
         <DropdownMenu>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-            </TooltipTrigger>
-            <TooltipContent>More</TooltipContent>
-          </Tooltip>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5">
+              <Plus className="h-4 w-4" />
+              Add
+            </Button>
+          </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={handleAddModel}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Model
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onAddRelationship}>
+              <Link2 className="h-4 w-4 mr-2" />
+              Add Relationship
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import Models
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <div className="flex-1" />
+
+        {/* Overflow Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Export</DropdownMenuLabel>
+            <DropdownMenuItem onClick={onShare}>
+              <Share2 className="h-4 w-4 mr-2" />
+              Share & Export
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Session</DropdownMenuLabel>
             <DropdownMenuItem onClick={handleResetLayout}>
               <RotateCcw className="h-4 w-4 mr-2" />
               Reset Layout
@@ -185,32 +169,27 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
               <ZoomIn className="h-4 w-4 mr-2" />
               Reset Zoom
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleResetSession} className="text-destructive focus:text-destructive">
               <Trash2 className="h-4 w-4 mr-2" />
               Reset Session
             </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Theme</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => setTheme('light')}>
+              <Sun className="h-4 w-4 mr-2" />
+              Light
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme('dark')}>
+              <Moon className="h-4 w-4 mr-2" />
+              Dark
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme('system')}>
+              <Monitor className="h-4 w-4 mr-2" />
+              System
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        <div className="flex-1" />
-
-        {/* Right Side */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant={inspectorOpen ? "secondary" : "ghost"} 
-              size="icon"
-              className="h-8 w-8"
-              onClick={onToggleInspector}
-            >
-              <PanelRight className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{inspectorOpen ? "Hide Inspector" : "Show Inspector"}</TooltipContent>
-        </Tooltip>
-
-        <ThemeToggle />
       </div>
 
       {/* Import Dialog */}
@@ -223,7 +202,7 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
       }}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>Import Schema</DialogTitle>
+            <DialogTitle>Import Models</DialogTitle>
             <DialogDescription>
               Paste JSON to replace the current view.
             </DialogDescription>
@@ -281,6 +260,6 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </TooltipProvider>
+    </>
   )
 }
