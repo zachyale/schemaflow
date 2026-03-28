@@ -2,11 +2,13 @@
 
 import { useReducer, useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { PanelLeft } from 'lucide-react'
 import { SchemaContext, schemaReducer, initialState, saveSession, loadSession, generateId } from '@/lib/schema-store'
 import { decompressFromUrl } from '@/lib/compression'
 import { SAMPLE_SESSION_FILES } from '@/lib/sample-sessions'
 import type { Schema, SchemaView, Model, Field, Relationship } from '@/lib/schema-types'
 import type { SchemaState } from '@/lib/schema-store'
+import { Button } from '@/components/ui/button'
 import { Toolbar } from './toolbar'
 import { ModelSidebar } from './model-sidebar'
 import { Canvas } from './canvas'
@@ -85,6 +87,8 @@ export function SchemaEditor() {
   const [addRelOpen, setAddRelOpen] = useState(false)
   const [addRelFromModelId, setAddRelFromModelId] = useState<string | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [isModelDragging, setIsModelDragging] = useState(false)
   const [mounted, setMounted] = useState(false)
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -277,15 +281,44 @@ export function SchemaEditor() {
         
         <ViewTabs />
         
-        <div className="flex flex-1 overflow-hidden">
-          <ModelSidebar />
-          <Canvas />
-          <InspectorPanel
-            onAddRelationshipFromModel={(modelId) => {
-              setAddRelFromModelId(modelId)
-              setAddRelOpen(true)
-            }}
-          />
+        <div className="relative flex flex-1 overflow-hidden">
+          <ModelSidebar className="hidden md:flex" />
+
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute left-3 top-3 z-20 md:hidden"
+            onClick={() => setMobileSidebarOpen(true)}
+            aria-label="Open models sidebar"
+          >
+            <PanelLeft className="h-4 w-4" />
+          </Button>
+
+          {mobileSidebarOpen ? (
+            <>
+              <button
+                className="absolute inset-0 z-30 bg-black/30 md:hidden"
+                onClick={() => setMobileSidebarOpen(false)}
+                aria-label="Close models sidebar"
+              />
+              <ModelSidebar
+                className="absolute inset-y-0 left-0 z-40 w-72 shadow-xl md:hidden"
+                onModelSelect={() => setMobileSidebarOpen(false)}
+                onRequestClose={() => setMobileSidebarOpen(false)}
+              />
+            </>
+          ) : null}
+
+          <Canvas onModelDragStateChange={setIsModelDragging} />
+          {!isModelDragging ? (
+            <InspectorPanel
+              onAddRelationshipFromModel={(modelId) => {
+                setAddRelFromModelId(modelId)
+                setAddRelOpen(true)
+              }}
+              onClose={() => dispatch({ type: 'SET_SELECTION', selection: null })}
+            />
+          ) : null}
         </div>
 
         <AddRelationshipDialog

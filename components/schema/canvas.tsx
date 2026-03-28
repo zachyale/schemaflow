@@ -8,7 +8,11 @@ import { RelationshipLines } from './relationship-lines'
 const MIN_SCALE = 0.25
 const MAX_SCALE = 2
 
-export function Canvas() {
+interface CanvasProps {
+  onModelDragStateChange?: (isDragging: boolean) => void
+}
+
+export function Canvas({ onModelDragStateChange }: CanvasProps) {
   const { state, dispatch } = useSchema()
   const activeView = getActiveView(state)
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -350,7 +354,11 @@ export function Canvas() {
         {/* Model cards layer */}
         <div className="pointer-events-auto">
           {visibleModels.map((model) => (
-            <ModelCard key={model.id} model={model} />
+            <ModelCard
+              key={model.id}
+              model={model}
+              onDragStateChange={onModelDragStateChange}
+            />
           ))}
         </div>
       </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Plus, Settings2, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Settings2, Trash2, X } from 'lucide-react'
 import { useSchema, getActiveView, generateId } from '@/lib/schema-store'
 import { FIELD_TYPES } from '@/lib/schema-types'
 import { Button } from '@/components/ui/button'
@@ -17,9 +17,10 @@ type InspectorNode =
 
 interface InspectorPanelProps {
   onAddRelationshipFromModel?: (modelId: string) => void
+  onClose?: () => void
 }
 
-export function InspectorPanel({ onAddRelationshipFromModel }: InspectorPanelProps) {
+export function InspectorPanel({ onAddRelationshipFromModel, onClose }: InspectorPanelProps) {
   const { state, dispatch } = useSchema()
   const activeView = getActiveView(state)
   const [stack, setStack] = useState<InspectorNode[]>([])
@@ -102,6 +103,15 @@ export function InspectorPanel({ onAddRelationshipFromModel }: InspectorPanelPro
         <div className="flex items-center gap-2 border-b px-4 py-3">
           <Settings2 className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-medium">Table Details</span>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="ml-auto"
+            onClick={onClose}
+            aria-label="Close table details"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -265,6 +275,15 @@ export function InspectorPanel({ onAddRelationshipFromModel }: InspectorPanelPro
         </Button>
         <Settings2 className="h-4 w-4 text-muted-foreground ml-1" />
         <span className="text-sm font-medium">Column Details</span>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="ml-auto"
+          onClick={onClose}
+          aria-label="Close table details"
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto">

@@ -1,10 +1,17 @@
 'use client'
 
-import { Database, Table } from 'lucide-react'
+import { Database, Table, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSchema, getActiveView } from '@/lib/schema-store'
+import { Button } from '@/components/ui/button'
 
-export function ModelSidebar() {
+interface ModelSidebarProps {
+  className?: string
+  onModelSelect?: () => void
+  onRequestClose?: () => void
+}
+
+export function ModelSidebar({ className, onModelSelect, onRequestClose }: ModelSidebarProps) {
   const { state, dispatch } = useSchema()
   const activeView = getActiveView(state)
 
@@ -22,16 +29,29 @@ export function ModelSidebar() {
         },
       })
     }
+
+    onModelSelect?.()
   }
 
   return (
-    <div className="w-56 border-r bg-sidebar flex flex-col">
+    <div className={cn('w-56 border-r bg-sidebar flex flex-col', className)}>
       <div className="flex items-center gap-2 border-b px-4 py-3">
         <Database className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-medium text-sidebar-foreground">Models</span>
         <span className="ml-auto text-xs text-muted-foreground">
           {activeView.schema.models.length}
         </span>
+        {onRequestClose ? (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="ml-1"
+            onClick={onRequestClose}
+            aria-label="Close models sidebar"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        ) : null}
       </div>
 
       <div className="flex-1 overflow-y-auto">

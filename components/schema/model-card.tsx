@@ -9,9 +9,10 @@ import { Button } from '@/components/ui/button'
 
 interface ModelCardProps {
   model: Model
+  onDragStateChange?: (isDragging: boolean) => void
 }
 
-export function ModelCard({ model }: ModelCardProps) {
+export function ModelCard({ model, onDragStateChange }: ModelCardProps) {
   const { state, dispatch } = useSchema()
   const activeView = getActiveView(state)
   const cardRef = useRef<HTMLDivElement>(null)
@@ -49,8 +50,19 @@ export function ModelCard({ model }: ModelCardProps) {
       if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current)
       }
+      if (isDraggingRef.current) {
+        onDragStateChange?.(false)
+      }
     }
-  }, [])
+  }, [onDragStateChange])
+
+  const setModelDragging = useCallback(
+    (next: boolean) => {
+      setIsDragging(next)
+      onDragStateChange?.(next)
+    },
+    [onDragStateChange]
+  )
 
   const scheduleMoveModel = useCallback(
     (position: { x: number; y: number }) => {
@@ -97,7 +109,7 @@ export function ModelCard({ model }: ModelCardProps) {
       const scale = scaleRef.current
 
       isDraggingRef.current = true
-      setIsDragging(true)
+      setModelDragging(true)
       dragOffsetRef.current = {
         x: (clientX - rect.left) / scale,
         y: (clientY - rect.top) / scale,
@@ -147,7 +159,7 @@ export function ModelCard({ model }: ModelCardProps) {
 
   const handleDragEnd = useCallback(() => {
     isDraggingRef.current = false
-    setIsDragging(false)
+    setModelDragging(false)
     if (rafIdRef.current !== null) {
       cancelAnimationFrame(rafIdRef.current)
       rafIdRef.current = null
@@ -160,7 +172,7 @@ export function ModelCard({ model }: ModelCardProps) {
       })
       pendingPositionRef.current = null
     }
-  }, [dispatch, model.id])
+  }, [dispatch, model.id, setModelDragging])
 
   // Attach global listeners when dragging
   const handleMouseDownWrapper = useCallback(
@@ -200,8 +212,8 @@ export function ModelCard({ model }: ModelCardProps) {
       const initialOffsetX = (touch.clientX - rect.left) / scale
       const initialOffsetY = (touch.clientY - rect.top) / scale
 
-      setIsDragging(true)
       isDraggingRef.current = true
+      setModelDragging(true)
       dragOffsetRef.current = { x: initialOffsetX, y: initialOffsetY }
       dispatch({ type: 'SET_SELECTION', selection: { type: 'model', modelId: model.id } })
 
@@ -224,8 +236,7 @@ export function ModelCard({ model }: ModelCardProps) {
       }
       
       const handleEnd = () => {
-        setIsDragging(false)
-        isDraggingRef.current = false
+        handleDragEnd()
         window.removeEventListener('touchmove', handleMove)
         window.removeEventListener('touchend', handleEnd)
         window.removeEventListener('touchcancel', handleEnd)
@@ -235,7 +246,7 @@ export function ModelCard({ model }: ModelCardProps) {
       window.addEventListener('touchend', handleEnd)
       window.addEventListener('touchcancel', handleEnd)
     },
-    [dispatch, model.id, scheduleMoveModel]
+    [dispatch, handleDragEnd, model.id, scheduleMoveModel, setModelDragging]
   )
 
   const handleAddField = () => {
