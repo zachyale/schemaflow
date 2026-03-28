@@ -1,7 +1,7 @@
 'use client'
 
 import { Settings2, Trash2 } from 'lucide-react'
-import { useSchema } from '@/lib/schema-store'
+import { useSchema, getActiveView } from '@/lib/schema-store'
 import { FIELD_TYPES, RELATIONSHIP_TYPES } from '@/lib/schema-types'
 import type { RelationshipType } from '@/lib/schema-types'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator'
 
 export function InspectorPanel() {
   const { state, dispatch } = useSchema()
+  const activeView = getActiveView(state)
 
   if (!state.selection) {
     return (
@@ -31,7 +32,7 @@ export function InspectorPanel() {
   }
 
   if (state.selection.type === 'model') {
-    const model = state.schema.models.find((m) => m.id === state.selection?.modelId)
+    const model = activeView.schema.models.find((m) => m.id === state.selection?.modelId)
     if (!model) return null
 
     return (
@@ -56,44 +57,6 @@ export function InspectorPanel() {
                   })
                 }
               />
-            </div>
-
-            <Separator />
-
-            <div className="space-y-2">
-              <Label className="text-muted-foreground text-xs">Position</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="pos-x" className="text-xs">X</Label>
-                  <Input
-                    id="pos-x"
-                    type="number"
-                    value={Math.round(model.position.x)}
-                    onChange={(e) =>
-                      dispatch({
-                        type: 'MOVE_MODEL',
-                        modelId: model.id,
-                        position: { ...model.position, x: parseInt(e.target.value) || 0 },
-                      })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="pos-y" className="text-xs">Y</Label>
-                  <Input
-                    id="pos-y"
-                    type="number"
-                    value={Math.round(model.position.y)}
-                    onChange={(e) =>
-                      dispatch({
-                        type: 'MOVE_MODEL',
-                        modelId: model.id,
-                        position: { ...model.position, y: parseInt(e.target.value) || 0 },
-                      })
-                    }
-                  />
-                </div>
-              </div>
             </div>
 
             <Separator />
@@ -137,7 +100,7 @@ export function InspectorPanel() {
   }
 
   if (state.selection.type === 'field') {
-    const model = state.schema.models.find((m) => m.id === state.selection?.modelId)
+    const model = activeView.schema.models.find((m) => m.id === state.selection?.modelId)
     const field = model?.fields.find((f) => f.id === (state.selection as { fieldId: string }).fieldId)
     if (!model || !field) return null
 
@@ -279,13 +242,13 @@ export function InspectorPanel() {
   }
 
   if (state.selection.type === 'relationship') {
-    const relationship = state.schema.relationships.find(
+    const relationship = activeView.schema.relationships.find(
       (r) => r.id === (state.selection as { relationshipId: string }).relationshipId
     )
     if (!relationship) return null
 
-    const fromModel = state.schema.models.find((m) => m.id === relationship.fromModelId)
-    const toModel = state.schema.models.find((m) => m.id === relationship.toModelId)
+    const fromModel = activeView.schema.models.find((m) => m.id === relationship.fromModelId)
+    const toModel = activeView.schema.models.find((m) => m.id === relationship.toModelId)
     const fromField = fromModel?.fields.find((f) => f.id === relationship.fromFieldId)
     const toField = toModel?.fields.find((f) => f.id === relationship.toFieldId)
 

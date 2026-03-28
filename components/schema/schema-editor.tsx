@@ -1,12 +1,13 @@
 'use client'
 
 import { useReducer, useState, useEffect } from 'react'
-import { SchemaContext, schemaReducer, initialState } from '@/lib/schema-store'
+import { SchemaContext, schemaReducer, initialState, saveSession, loadSession, getActiveView } from '@/lib/schema-store'
 import { Toolbar } from './toolbar'
 import { ModelSidebar } from './model-sidebar'
 import { Canvas } from './canvas'
 import { InspectorPanel } from './inspector-panel'
 import { AddRelationshipDialog } from './add-relationship-dialog'
+import { ViewTabs } from './view-tabs'
 
 export function SchemaEditor() {
   const [state, dispatch] = useReducer(schemaReducer, initialState)
@@ -14,9 +15,25 @@ export function SchemaEditor() {
   const [inspectorOpen, setInspectorOpen] = useState(true)
   const [mounted, setMounted] = useState(false)
 
+  // Load session on mount
   useEffect(() => {
+    const savedState = loadSession()
+    if (savedState) {
+      dispatch({ type: 'LOAD_STATE', state: savedState })
+    }
     setMounted(true)
   }, [])
+
+  // Save session on state changes (debounced)
+  useEffect(() => {
+    if (!mounted) return
+    
+    const timeout = setTimeout(() => {
+      saveSession(state)
+    }, 500)
+    
+    return () => clearTimeout(timeout)
+  }, [state, mounted])
 
   if (!mounted) {
     return (
@@ -38,6 +55,8 @@ export function SchemaEditor() {
           inspectorOpen={inspectorOpen}
           onToggleInspector={() => setInspectorOpen(!inspectorOpen)}
         />
+        
+        <ViewTabs />
         
         <div className="flex flex-1 overflow-hidden">
           <ModelSidebar />

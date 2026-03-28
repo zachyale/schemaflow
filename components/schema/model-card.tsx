@@ -3,7 +3,7 @@
 import { useRef, useState, useCallback } from 'react'
 import { ChevronDown, ChevronRight, GripVertical, Key, Link, Plus, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useSchema, generateId } from '@/lib/schema-store'
+import { useSchema, generateId, getActiveView } from '@/lib/schema-store'
 import type { Model, Field } from '@/lib/schema-types'
 import { Button } from '@/components/ui/button'
 
@@ -13,6 +13,7 @@ interface ModelCardProps {
 
 export function ModelCard({ model }: ModelCardProps) {
   const { state, dispatch } = useSchema()
+  const activeView = getActiveView(state)
   const cardRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
@@ -26,7 +27,7 @@ export function ModelCard({ model }: ModelCardProps) {
       if (!rect || !canvas) return
 
       const canvasRect = canvas.getBoundingClientRect()
-      const scale = state.canvasScale
+      const scale = activeView.canvasScale
 
       setIsDragging(true)
       setDragOffset({
@@ -36,7 +37,7 @@ export function ModelCard({ model }: ModelCardProps) {
 
       dispatch({ type: 'SET_SELECTION', selection: { type: 'model', modelId: model.id } })
     },
-    [dispatch, model.id, state.canvasScale]
+    [dispatch, model.id, activeView.canvasScale]
   )
 
   const handleMouseDown = useCallback(
@@ -58,9 +59,9 @@ export function ModelCard({ model }: ModelCardProps) {
       if (!canvas) return
 
       const canvasRect = canvas.getBoundingClientRect()
-      const scale = state.canvasScale
-      const newX = (clientX - canvasRect.left) / scale - dragOffset.x - state.canvasOffset.x
-      const newY = (clientY - canvasRect.top) / scale - dragOffset.y - state.canvasOffset.y
+      const scale = activeView.canvasScale
+      const newX = (clientX - canvasRect.left) / scale - dragOffset.x - activeView.canvasOffset.x
+      const newY = (clientY - canvasRect.top) / scale - dragOffset.y - activeView.canvasOffset.y
 
       dispatch({
         type: 'MOVE_MODEL',
@@ -68,7 +69,7 @@ export function ModelCard({ model }: ModelCardProps) {
         position: { x: Math.max(0, newX), y: Math.max(0, newY) },
       })
     },
-    [isDragging, dragOffset, state.canvasScale, state.canvasOffset, dispatch, model.id]
+    [isDragging, dragOffset, activeView.canvasScale, activeView.canvasOffset, dispatch, model.id]
   )
 
   const handleMouseMove = useCallback(
@@ -114,25 +115,28 @@ export function ModelCard({ model }: ModelCardProps) {
       const canvas = cardRef.current?.closest('[data-canvas]')
       if (!rect || !canvas) return
 
-      const scale = state.canvasScale
+      const scale = activeView.canvasScale
+      
+      // Store the initial offset from touch point to card corner
+      const initialOffsetX = (touch.clientX - rect.left) / scale
+      const initialOffsetY = (touch.clientY - rect.top) / scale
 
       setIsDragging(true)
-      setDragOffset({
-        x: (touch.clientX - rect.left) / scale,
-        y: (touch.clientY - rect.top) / scale,
-      })
+      setDragOffset({ x: initialOffsetX, y: initialOffsetY })
       dispatch({ type: 'SET_SELECTION', selection: { type: 'model', modelId: model.id } })
 
-      const handleMove = (e: TouchEvent) => {
-        if (e.touches.length === 1) {
-          e.preventDefault()
-          const touch = e.touches[0]
+      const handleMove = (moveEvent: TouchEvent) => {
+        if (moveEvent.touches.length === 1) {
+          moveEvent.preventDefault()
+          moveEvent.stopPropagation()
+          
+          const moveTouch = moveEvent.touches[0]
           const canvasRect = canvas.getBoundingClientRect()
-          const currentScale = state.canvasScale
-          const offsetX = (touch.clientX - rect.left) / currentScale
-          const offsetY = (touch.clientY - rect.top) / currentScale
-          const newX = (touch.clientX - canvasRect.left) / currentScale - offsetX - state.canvasOffset.x
-          const newY = (touch.clientY - canvasRect.top) / currentScale - offsetY - state.canvasOffset.y
+          const currentScale = activeView.canvasScale
+          
+          // Use the stored initial offset, not recalculated
+          const newX = (moveTouch.clientX - canvasRect.left) / currentScale - initialOffsetX - activeView.canvasOffset.x
+          const newY = (moveTouch.clientY - canvasRect.top) / currentScale - initialOffsetY - activeView.canvasOffset.y
 
           dispatch({
             type: 'MOVE_MODEL',
@@ -146,12 +150,14 @@ export function ModelCard({ model }: ModelCardProps) {
         setIsDragging(false)
         window.removeEventListener('touchmove', handleMove)
         window.removeEventListener('touchend', handleEnd)
+        window.removeEventListener('touchcancel', handleEnd)
       }
 
       window.addEventListener('touchmove', handleMove, { passive: false })
       window.addEventListener('touchend', handleEnd)
+      window.addEventListener('touchcancel', handleEnd)
     },
-    [state.canvasScale, state.canvasOffset, dispatch, model.id]
+    [activeView.canvasScale, activeView.canvasOffset, dispatch, model.id]
   )
 
   const handleAddField = () => {

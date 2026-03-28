@@ -1,8 +1,10 @@
 'use client'
 
 import { createContext, useContext } from 'react'
-import type { Schema, Model, Field, Relationship, Position, RelationshipType } from './schema-types'
-import { DEFAULT_SCHEMA } from './schema-types'
+import type { Schema, Model, Field, Relationship, Position, RelationshipType, SchemaView } from './schema-types'
+import { DEFAULT_SCHEMA, DEFAULT_VIEW_ID } from './schema-types'
+
+const STORAGE_KEY = 'schemaflow-session'
 
 export type Selection =
   | { type: 'model'; modelId: string }
@@ -11,10 +13,14 @@ export type Selection =
   | null
 
 export interface SchemaState {
-  schema: Schema
+  views: SchemaView[]
+  activeViewId: string
   selection: Selection
-  canvasOffset: Position
-  canvasScale: number
+}
+
+// Helper to get active view's schema
+export function getActiveView(state: SchemaState): SchemaView {
+  return state.views.find(v => v.id === state.activeViewId) || state.views[0]
 }
 
 export type SchemaAction =
@@ -36,100 +42,123 @@ export type SchemaAction =
   | { type: 'UPDATE_RELATIONSHIP'; relationshipId: string; updates: Partial<Omit<Relationship, 'id'>> }
   | { type: 'DELETE_RELATIONSHIP'; relationshipId: string }
   | { type: 'RESET_LAYOUT' }
+  // View actions
+  | { type: 'ADD_VIEW'; view: SchemaView }
+  | { type: 'DELETE_VIEW'; viewId: string }
+  | { type: 'RENAME_VIEW'; viewId: string; name: string }
+  | { type: 'SWITCH_VIEW'; viewId: string }
+  | { type: 'LOAD_STATE'; state: SchemaState }
 
-export const initialState: SchemaState = {
+const defaultView: SchemaView = {
+  id: DEFAULT_VIEW_ID,
+  name: 'Default',
   schema: DEFAULT_SCHEMA,
-  selection: null,
   canvasOffset: { x: 0, y: 0 },
   canvasScale: 1,
 }
 
+export const initialState: SchemaState = {
+  views: [defaultView],
+  activeViewId: DEFAULT_VIEW_ID,
+  selection: null,
+}
+
+// Helper to update active view
+function updateActiveView(state: SchemaState, updater: (view: SchemaView) => SchemaView): SchemaState {
+  return {
+    ...state,
+    views: state.views.map(v => v.id === state.activeViewId ? updater(v) : v),
+  }
+}
+
 export function schemaReducer(state: SchemaState, action: SchemaAction): SchemaState {
   switch (action.type) {
+    case 'LOAD_STATE':
+      return action.state
+
     case 'SET_SCHEMA':
-      return { ...state, schema: action.schema, selection: null }
+      return updateActiveView(state, v => ({ ...v, schema: action.schema }))
 
     case 'SET_SELECTION':
       return { ...state, selection: action.selection }
 
     case 'SET_CANVAS_OFFSET':
-      return { ...state, canvasOffset: action.offset }
+      return updateActiveView(state, v => ({ ...v, canvasOffset: action.offset }))
 
     case 'SET_CANVAS_SCALE':
-      return { ...state, canvasScale: Math.max(0.25, Math.min(2, action.scale)) }
+      return updateActiveView(state, v => ({ ...v, canvasScale: Math.max(0.25, Math.min(2, action.scale)) }))
 
     case 'ADD_MODEL':
-      return {
-        ...state,
-        schema: {
-          ...state.schema,
-          models: [...state.schema.models, action.model],
-        },
-      }
+      return updateActiveView(state, v => ({
+        ...v,
+        schema: { ...v.schema, models: [...v.schema.models, action.model] },
+      }))
 
     case 'UPDATE_MODEL':
-      return {
-        ...state,
+      return updateActiveView(state, v => ({
+        ...v,
         schema: {
-          ...state.schema,
-          models: state.schema.models.map((m) =>
+          ...v.schema,
+          models: v.schema.models.map((m) =>
             m.id === action.modelId ? { ...m, ...action.updates } : m
           ),
         },
-      }
+      }))
 
     case 'DELETE_MODEL':
       return {
-        ...state,
-        schema: {
-          ...state.schema,
-          models: state.schema.models.filter((m) => m.id !== action.modelId),
-          relationships: state.schema.relationships.filter(
-            (r) => r.fromModelId !== action.modelId && r.toModelId !== action.modelId
-          ),
-        },
+        ...updateActiveView(state, v => ({
+          ...v,
+          schema: {
+            ...v.schema,
+            models: v.schema.models.filter((m) => m.id !== action.modelId),
+            relationships: v.schema.relationships.filter(
+              (r) => r.fromModelId !== action.modelId && r.toModelId !== action.modelId
+            ),
+          },
+        })),
         selection: null,
       }
 
     case 'MOVE_MODEL':
-      return {
-        ...state,
+      return updateActiveView(state, v => ({
+        ...v,
         schema: {
-          ...state.schema,
-          models: state.schema.models.map((m) =>
+          ...v.schema,
+          models: v.schema.models.map((m) =>
             m.id === action.modelId ? { ...m, position: action.position } : m
           ),
         },
-      }
+      }))
 
     case 'TOGGLE_MODEL_COLLAPSE':
-      return {
-        ...state,
+      return updateActiveView(state, v => ({
+        ...v,
         schema: {
-          ...state.schema,
-          models: state.schema.models.map((m) =>
+          ...v.schema,
+          models: v.schema.models.map((m) =>
             m.id === action.modelId ? { ...m, collapsed: !m.collapsed } : m
           ),
         },
-      }
+      }))
 
     case 'ADD_FIELD':
-      return {
-        ...state,
+      return updateActiveView(state, v => ({
+        ...v,
         schema: {
-          ...state.schema,
-          models: state.schema.models.map((m) =>
+          ...v.schema,
+          models: v.schema.models.map((m) =>
             m.id === action.modelId ? { ...m, fields: [...m.fields, action.field] } : m
           ),
         },
-      }
+      }))
 
     case 'UPDATE_FIELD':
-      return {
-        ...state,
+      return updateActiveView(state, v => ({
+        ...v,
         schema: {
-          ...state.schema,
-          models: state.schema.models.map((m) =>
+          ...v.schema,
+          models: v.schema.models.map((m) =>
             m.id === action.modelId
               ? {
                   ...m,
@@ -140,32 +169,35 @@ export function schemaReducer(state: SchemaState, action: SchemaAction): SchemaS
               : m
           ),
         },
-      }
+      }))
 
     case 'DELETE_FIELD':
       return {
-        ...state,
-        schema: {
-          ...state.schema,
-          models: state.schema.models.map((m) =>
-            m.id === action.modelId
-              ? { ...m, fields: m.fields.filter((f) => f.id !== action.fieldId) }
-              : m
-          ),
-          relationships: state.schema.relationships.filter(
-            (r) =>
-              !(
-                (r.fromModelId === action.modelId && r.fromFieldId === action.fieldId) ||
-                (r.toModelId === action.modelId && r.toFieldId === action.fieldId)
-              )
-          ),
-        },
+        ...updateActiveView(state, v => ({
+          ...v,
+          schema: {
+            ...v.schema,
+            models: v.schema.models.map((m) =>
+              m.id === action.modelId
+                ? { ...m, fields: m.fields.filter((f) => f.id !== action.fieldId) }
+                : m
+            ),
+            relationships: v.schema.relationships.filter(
+              (r) =>
+                !(
+                  (r.fromModelId === action.modelId && r.fromFieldId === action.fieldId) ||
+                  (r.toModelId === action.modelId && r.toFieldId === action.fieldId)
+                )
+            ),
+          },
+        })),
         selection: null,
       }
 
     case 'MOVE_FIELD': {
       const { fromModelId, toModelId, fieldId, newIndex } = action
-      const fromModel = state.schema.models.find((m) => m.id === fromModelId)
+      const activeView = getActiveView(state)
+      const fromModel = activeView.schema.models.find((m) => m.id === fromModelId)
       const field = fromModel?.fields.find((f) => f.id === fieldId)
 
       if (!fromModel || !field) return state
@@ -173,22 +205,22 @@ export function schemaReducer(state: SchemaState, action: SchemaAction): SchemaS
       if (fromModelId === toModelId) {
         const newFields = fromModel.fields.filter((f) => f.id !== fieldId)
         newFields.splice(newIndex, 0, field)
-        return {
-          ...state,
+        return updateActiveView(state, v => ({
+          ...v,
           schema: {
-            ...state.schema,
-            models: state.schema.models.map((m) =>
+            ...v.schema,
+            models: v.schema.models.map((m) =>
               m.id === fromModelId ? { ...m, fields: newFields } : m
             ),
           },
-        }
+        }))
       }
 
-      return {
-        ...state,
+      return updateActiveView(state, v => ({
+        ...v,
         schema: {
-          ...state.schema,
-          models: state.schema.models.map((m) => {
+          ...v.schema,
+          models: v.schema.models.map((m) => {
             if (m.id === fromModelId) {
               return { ...m, fields: m.fields.filter((f) => f.id !== fieldId) }
             }
@@ -199,7 +231,7 @@ export function schemaReducer(state: SchemaState, action: SchemaAction): SchemaS
             }
             return m
           }),
-          relationships: state.schema.relationships.map((r) => {
+          relationships: v.schema.relationships.map((r) => {
             if (r.fromModelId === fromModelId && r.fromFieldId === fieldId) {
               return { ...r, fromModelId: toModelId }
             }
@@ -209,68 +241,72 @@ export function schemaReducer(state: SchemaState, action: SchemaAction): SchemaS
             return r
           }),
         },
-      }
+      }))
     }
 
     case 'REORDER_FIELDS': {
       const { modelId, fieldIds } = action
-      const model = state.schema.models.find((m) => m.id === modelId)
+      const activeView = getActiveView(state)
+      const model = activeView.schema.models.find((m) => m.id === modelId)
       if (!model) return state
 
       const fieldMap = new Map(model.fields.map((f) => [f.id, f]))
       const newFields = fieldIds.map((id) => fieldMap.get(id)).filter(Boolean) as Field[]
 
-      return {
-        ...state,
+      return updateActiveView(state, v => ({
+        ...v,
         schema: {
-          ...state.schema,
-          models: state.schema.models.map((m) =>
+          ...v.schema,
+          models: v.schema.models.map((m) =>
             m.id === modelId ? { ...m, fields: newFields } : m
           ),
         },
-      }
+      }))
     }
 
     case 'ADD_RELATIONSHIP':
-      return {
-        ...state,
+      return updateActiveView(state, v => ({
+        ...v,
         schema: {
-          ...state.schema,
-          relationships: [...state.schema.relationships, action.relationship],
+          ...v.schema,
+          relationships: [...v.schema.relationships, action.relationship],
         },
-      }
+      }))
 
     case 'UPDATE_RELATIONSHIP':
-      return {
-        ...state,
+      return updateActiveView(state, v => ({
+        ...v,
         schema: {
-          ...state.schema,
-          relationships: state.schema.relationships.map((r) =>
+          ...v.schema,
+          relationships: v.schema.relationships.map((r) =>
             r.id === action.relationshipId ? { ...r, ...action.updates } : r
           ),
         },
-      }
+      }))
 
     case 'DELETE_RELATIONSHIP':
       return {
-        ...state,
-        schema: {
-          ...state.schema,
-          relationships: state.schema.relationships.filter((r) => r.id !== action.relationshipId),
-        },
+        ...updateActiveView(state, v => ({
+          ...v,
+          schema: {
+            ...v.schema,
+            relationships: v.schema.relationships.filter((r) => r.id !== action.relationshipId),
+          },
+        })),
         selection: null,
       }
 
     case 'RESET_LAYOUT': {
-      const models = state.schema.models
+      const activeView = getActiveView(state)
+      const models = activeView.schema.models
       const spacing = 350
       const startX = 100
       const startY = 100
 
-      return {
-        ...state,
+      return updateActiveView(state, v => ({
+        ...v,
         schema: {
-          ...state.schema,
+          ...v.schema,
           models: models.map((m, i) => ({
             ...m,
             position: { x: startX + i * spacing, y: startY },
@@ -278,8 +314,42 @@ export function schemaReducer(state: SchemaState, action: SchemaAction): SchemaS
         },
         canvasOffset: { x: 0, y: 0 },
         canvasScale: 1,
+      }))
+    }
+
+    // View actions
+    case 'ADD_VIEW':
+      return {
+        ...state,
+        views: [...state.views, action.view],
+        activeViewId: action.view.id,
+        selection: null,
+      }
+
+    case 'DELETE_VIEW': {
+      if (state.views.length <= 1) return state
+      const newViews = state.views.filter(v => v.id !== action.viewId)
+      const needsNewActive = state.activeViewId === action.viewId
+      return {
+        ...state,
+        views: newViews,
+        activeViewId: needsNewActive ? newViews[0].id : state.activeViewId,
+        selection: null,
       }
     }
+
+    case 'RENAME_VIEW':
+      return {
+        ...state,
+        views: state.views.map(v => v.id === action.viewId ? { ...v, name: action.name } : v),
+      }
+
+    case 'SWITCH_VIEW':
+      return {
+        ...state,
+        activeViewId: action.viewId,
+        selection: null,
+      }
 
     default:
       return state
@@ -303,6 +373,31 @@ export function useSchema() {
 
 export function generateId(prefix: string = 'id'): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+}
+
+// Session persistence helpers
+export function saveSession(state: SchemaState): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch (e) {
+    console.error('Failed to save session:', e)
+  }
+}
+
+export function loadSession(): SchemaState | null {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      const parsed = JSON.parse(saved) as SchemaState
+      // Validate structure
+      if (parsed.views && Array.isArray(parsed.views) && parsed.views.length > 0 && parsed.activeViewId) {
+        return parsed
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load session:', e)
+  }
+  return null
 }
 
 export function validateSchema(json: unknown): { valid: boolean; error?: string; schema?: Schema } {
