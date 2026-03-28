@@ -5,6 +5,7 @@ import { FileText, Link2, Monitor, Moon, MoreHorizontal, Plus, RotateCcw, Share2
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { useSchema, generateId, validateSchema, getActiveView } from '@/lib/schema-store'
+import { parseSqlSchema } from '@/lib/sql-import'
 import type { Model } from '@/lib/schema-types'
 import {
   Dialog,
@@ -92,19 +93,35 @@ export function Toolbar({ onAddRelationship, onShare }: ToolbarProps) {
 
   const handleImport = () => {
     setImportError('')
-    try {
-      const parsed = JSON.parse(importJson)
-      const result = validateSchema(parsed)
-      if (result.valid && result.schema) {
-        dispatch({ type: 'SET_SCHEMA', schema: result.schema })
-        setImportOpen(false)
-        setImportJson('')
-      } else {
-        setImportError(result.error || 'Invalid schema')
+    const input = importJson.trim()
+    if (!input) return
+
+    if (input.startsWith('{') || input.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(input)
+        const result = validateSchema(parsed)
+        if (result.valid && result.schema) {
+          dispatch({ type: 'SET_SCHEMA', schema: result.schema })
+          setImportOpen(false)
+          setImportJson('')
+          return
+        }
+        setImportError(result.error || 'Invalid schema JSON')
+      } catch {
+        setImportError('Invalid JSON syntax')
       }
-    } catch {
-      setImportError('Invalid JSON syntax')
+      return
     }
+
+    const sqlResult = parseSqlSchema(input)
+    if (sqlResult.valid && sqlResult.schema) {
+      dispatch({ type: 'SET_SCHEMA', schema: sqlResult.schema })
+      setImportOpen(false)
+      setImportJson('')
+      return
+    }
+
+    setImportError(sqlResult.error || 'Unsupported import format')
   }
 
   return (
@@ -214,7 +231,7 @@ export function Toolbar({ onAddRelationship, onShare }: ToolbarProps) {
           <DialogHeader>
             <DialogTitle>Import Models</DialogTitle>
             <DialogDescription>
-              Paste JSON to replace the current view.
+              Paste Schemaflow JSON or a SQL schema dump (`CREATE TABLE ...`) to replace the current view.
             </DialogDescription>
           </DialogHeader>
           
@@ -252,7 +269,7 @@ export function Toolbar({ onAddRelationship, onShare }: ToolbarProps) {
             <Textarea
               value={importJson}
               onChange={(e) => setImportJson(e.target.value)}
-              placeholder='{"models": [...], "relationships": [...]}'
+              placeholder={'{"models": [...], "relationships": [...]}  or  CREATE TABLE users (...);'}
               className="h-48 font-mono text-sm"
             />
           </div>

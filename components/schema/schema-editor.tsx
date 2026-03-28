@@ -4,7 +4,9 @@ import { useReducer, useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { SchemaContext, schemaReducer, initialState, saveSession, loadSession, generateId } from '@/lib/schema-store'
 import { decompressFromUrl } from '@/lib/compression'
+import { SAMPLE_SESSIONS } from '@/lib/sample-sessions'
 import type { Schema, SchemaView, Model, Field, Relationship } from '@/lib/schema-types'
+import type { SchemaState } from '@/lib/schema-store'
 import { Toolbar } from './toolbar'
 import { ModelSidebar } from './model-sidebar'
 import { Canvas } from './canvas'
@@ -86,8 +88,40 @@ export function SchemaEditor() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
+  const buildStateFromImportedViews = (views: Array<{ name: string; schema: Schema }>): SchemaState => {
+    const mappedViews: SchemaView[] = views.map((viewData, index) => ({
+      id: generateId('view'),
+      name: viewData.name || `Imported ${index + 1}`,
+      schema: JSON.parse(JSON.stringify(viewData.schema)) as Schema,
+      canvasOffset: { x: 0, y: 0 },
+      canvasScale: 1,
+    }))
+
+    if (mappedViews.length === 0) {
+      return initialState
+    }
+
+    return {
+      views: mappedViews,
+      activeViewId: mappedViews[0].id,
+      selection: null,
+    }
+  }
+
   // Load session on mount and handle shared URL import via compression utility
   useEffect(() => {
+    const sampleParam = searchParams.get('sample')
+    if (sampleParam) {
+      const sampleViews = SAMPLE_SESSIONS[sampleParam]
+      if (sampleViews) {
+        dispatch({ type: 'RESET_SESSION' })
+        dispatch({ type: 'LOAD_STATE', state: buildStateFromImportedViews(sampleViews) })
+        router.replace('/', { scroll: false })
+        setMounted(true)
+        return
+      }
+    }
+
     // First load saved session
     const savedState = loadSession()
     if (savedState) {
@@ -105,30 +139,12 @@ export function SchemaEditor() {
           // Handle both compact format and legacy full format
           if (isCompactFormat(parsed)) {
             // New compact format
-            parsed.forEach((compactView) => {
-              const { name, schema } = fromCompactView(compactView)
-              const newView: SchemaView = {
-                id: generateId('view'),
-                name,
-                schema,
-                canvasOffset: { x: 0, y: 0 },
-                canvasScale: 1,
-              }
-              dispatch({ type: 'ADD_VIEW', view: newView })
-            })
+            const importedViews = parsed.map((compactView) => fromCompactView(compactView))
+            dispatch({ type: 'LOAD_STATE', state: buildStateFromImportedViews(importedViews) })
           } else {
             // Legacy full format
             const sharedViews = parsed as Array<{ name: string; schema: Schema }>
-            sharedViews.forEach((viewData, index) => {
-              const newView: SchemaView = {
-                id: generateId('view'),
-                name: viewData.name || `Imported ${index + 1}`,
-                schema: viewData.schema,
-                canvasOffset: { x: 0, y: 0 },
-                canvasScale: 1,
-              }
-              dispatch({ type: 'ADD_VIEW', view: newView })
-            })
+            dispatch({ type: 'LOAD_STATE', state: buildStateFromImportedViews(sharedViews) })
           }
           
           // Clear the share param from URL
