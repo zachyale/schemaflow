@@ -3,7 +3,7 @@
 import { useReducer, useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { SchemaContext, schemaReducer, initialState, saveSession, loadSession, generateId } from '@/lib/schema-store'
-import { decompressFromEncodedURIComponent } from 'lz-string'
+import { decompressFromUrl } from '@/lib/compression'
 import type { Schema, SchemaView, Model, Field, Relationship } from '@/lib/schema-types'
 import { Toolbar } from './toolbar'
 import { ModelSidebar } from './model-sidebar'
@@ -99,7 +99,7 @@ export function SchemaEditor() {
     const shareParam = searchParams.get('s') || searchParams.get('share')
     if (shareParam) {
       try {
-        const decompressed = decompressFromEncodedURIComponent(shareParam)
+        const decompressed = decompressFromUrl(shareParam)
         if (decompressed) {
           const parsed = JSON.parse(decompressed)
           
