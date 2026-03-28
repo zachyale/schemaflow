@@ -17,6 +17,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useSchema, getActiveView } from '@/lib/schema-store'
 import { compressToUrl } from '@/lib/compression'
+import { exportSchemaToSql, type SqlExportDialect } from '@/lib/sql-export'
 
 interface ShareDialogProps {
   open: boolean
@@ -32,6 +33,7 @@ export function ShareDialog({ open, onOpenChange }: ShareDialogProps) {
   const [selectedViewIds, setSelectedViewIds] = useState<Set<string>>(new Set())
   const [copied, setCopied] = useState(false)
   const [tab, setTab] = useState<string>('link')
+  const [sqlDialect, setSqlDialect] = useState<SqlExportDialect>('postgres')
 
   // Select all views by default when dialog opens
   useEffect(() => {
@@ -39,16 +41,17 @@ export function ShareDialog({ open, onOpenChange }: ShareDialogProps) {
       setSelectedViewIds(new Set(state.views.map(v => v.id)))
       setCopied(false)
       setTab('link')
+      setSqlDialect('postgres')
     }
-  }, [open, state.views])
+  }, [open])
 
-  const toggleView = (viewId: string) => {
+  const setViewChecked = (viewId: string, checked: boolean | 'indeterminate') => {
     setSelectedViewIds(prev => {
       const next = new Set(prev)
-      if (next.has(viewId)) {
-        next.delete(viewId)
-      } else {
+      if (checked) {
         next.add(viewId)
+      } else {
+        next.delete(viewId)
       }
       return next
     })
@@ -117,9 +120,29 @@ export function ShareDialog({ open, onOpenChange }: ShareDialogProps) {
     URL.revokeObjectURL(url)
   }
 
+  const currentViewSql = useMemo(() => {
+    return exportSchemaToSql(activeView.schema, { dialect: sqlDialect })
+  }, [activeView.schema, sqlDialect])
+
+  const handleCopySql = async () => {
+    await navigator.clipboard.writeText(currentViewSql)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleDownloadCurrentViewSql = () => {
+    const blob = new Blob([currentViewSql], { type: 'text/sql' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${activeView.name}.sql`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>Share & Export</DialogTitle>
           <DialogDescription>
@@ -127,13 +150,13 @@ export function ShareDialog({ open, onOpenChange }: ShareDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={tab} onValueChange={setTab}>
+        <Tabs value={tab} onValueChange={setTab} className="min-h-0 overflow-hidden">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="link">Share Link</TabsTrigger>
             <TabsTrigger value="export">Export JSON</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="link" className="space-y-4 mt-4">
+          <TabsContent value="link" className="space-y-4 mt-4 max-h-[65vh] overflow-y-auto pr-1">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Select views to share</Label>
               <div className="space-y-2 rounded-md border p-3 max-h-40 overflow-y-auto">
@@ -142,7 +165,7 @@ export function ShareDialog({ open, onOpenChange }: ShareDialogProps) {
                     <Checkbox
                       id={`share-view-${view.id}`}
                       checked={selectedViewIds.has(view.id)}
-                      onCheckedChange={() => toggleView(view.id)}
+                      onCheckedChange={(checked) => setViewChecked(view.id, checked)}
                     />
                     <Label 
                       htmlFor={`share-view-${view.id}`}
@@ -207,7 +230,7 @@ export function ShareDialog({ open, onOpenChange }: ShareDialogProps) {
             )}
           </TabsContent>
 
-          <TabsContent value="export" className="space-y-4 mt-4">
+          <TabsContent value="export" className="space-y-4 mt-4 max-h-[65vh] overflow-y-auto pr-1">
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 rounded-md border">
                 <div>
@@ -216,9 +239,48 @@ export function ShareDialog({ open, onOpenChange }: ShareDialogProps) {
                     Export &quot;{activeView.name}&quot; ({activeView.schema.models.length} models)
                   </p>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleDownloadCurrentView}>
-                  <Download className="h-4 w-4 mr-1.5" />
-                  Download
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleDownloadCurrentView}>
+                    <Download className="h-4 w-4 mr-1.5" />
+                    JSON
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleDownloadCurrentViewSql}>
+                    <Download className="h-4 w-4 mr-1.5" />
+                    SQL
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2 rounded-md border p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Label className="text-sm font-medium">SQL Preview (current view)</Label>
+                  <select
+                    className="h-8 rounded-md border bg-background px-2 text-sm"
+                    value={sqlDialect}
+                    onChange={(event) => setSqlDialect(event.target.value as SqlExportDialect)}
+                  >
+                    <option value="postgres">PostgreSQL</option>
+                    <option value="mysql">MySQL / MariaDB</option>
+                    <option value="sqlite">SQLite</option>
+                  </select>
+                </div>
+                <Textarea
+                  value={currentViewSql}
+                  readOnly
+                  className="h-32 font-mono text-xs"
+                />
+                <Button variant="outline" size="sm" onClick={handleCopySql}>
+                  {copied && tab === 'export' ? (
+                    <>
+                      <Check className="h-4 w-4 mr-1.5" />
+                      Copied SQL
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-1.5" />
+                      Copy SQL
+                    </>
+                  )}
                 </Button>
               </div>
 
@@ -230,7 +292,7 @@ export function ShareDialog({ open, onOpenChange }: ShareDialogProps) {
                       <Checkbox
                         id={`export-view-${view.id}`}
                         checked={selectedViewIds.has(view.id)}
-                        onCheckedChange={() => toggleView(view.id)}
+                        onCheckedChange={(checked) => setViewChecked(view.id, checked)}
                       />
                       <Label 
                         htmlFor={`export-view-${view.id}`}

@@ -54,6 +54,7 @@ export function Toolbar({ onAddRelationship, onShare }: ToolbarProps) {
   const [importJson, setImportJson] = useState('')
   const [importError, setImportError] = useState('')
   const [showSample, setShowSample] = useState(false)
+  const [sampleCopied, setSampleCopied] = useState(false)
 
   const handleAddModel = () => {
     const newModel: Model = {
@@ -224,9 +225,10 @@ export function Toolbar({ onAddRelationship, onShare }: ToolbarProps) {
         if (!open) {
           setShowSample(false)
           setImportError('')
+          setSampleCopied(false)
         }
       }}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-w-xl max-h-[85vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Import Models</DialogTitle>
             <DialogDescription>
@@ -234,7 +236,7 @@ export function Toolbar({ onAddRelationship, onShare }: ToolbarProps) {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-3">
+          <div className="space-y-3 overflow-y-auto pr-1 max-h-[60vh]">
             <div className="flex items-center justify-between">
               <Button 
                 variant="link" 
@@ -245,24 +247,40 @@ export function Toolbar({ onAddRelationship, onShare }: ToolbarProps) {
                 {showSample ? 'Hide sample' : 'Show sample'}
               </Button>
               {showSample && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => {
-                    setImportJson(SAMPLE_SCHEMA)
-                    setShowSample(false)
-                  }}
-                >
-                  Use sample
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(SAMPLE_SCHEMA)
+                      setSampleCopied(true)
+                      setTimeout(() => setSampleCopied(false), 1500)
+                    }}
+                  >
+                    {sampleCopied ? 'Copied' : 'Copy sample'}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setImportJson(SAMPLE_SCHEMA)
+                      setShowSample(false)
+                    }}
+                  >
+                    Use sample
+                  </Button>
+                </div>
               )}
             </div>
             
             {showSample && (
-              <pre className="rounded-md bg-muted p-3 text-xs font-mono overflow-auto max-h-36 border">
-                {SAMPLE_SCHEMA}
-              </pre>
+              <div className="rounded-md bg-muted border max-h-48 overflow-auto">
+                <pre className="p-3 text-xs font-mono whitespace-pre-wrap break-words">
+                  {SAMPLE_SCHEMA}
+                </pre>
+              </div>
             )}
             
             <Textarea

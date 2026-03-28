@@ -1,3 +1,4 @@
+import NodeSQLParser from 'node-sql-parser'
 import type { Field, Model, Relationship, Schema } from './schema-types'
 
 interface SqlForeignKey {
@@ -5,6 +6,12 @@ interface SqlForeignKey {
   sourceColumns: string[]
   targetTable: string
   targetColumns: string[]
+}
+
+interface ParsedTable {
+  tableName: string
+  columns: Field[]
+  foreignKeys: SqlForeignKey[]
 }
 
 function stripIdentifierQuotes(input: string): string {
@@ -29,6 +36,14 @@ function stripIdentifierQuotes(input: string): string {
 
 function canonicalName(input: string): string {
   return stripIdentifierQuotes(input).trim().toLowerCase()
+}
+
+function cleanSql(sql: string): string {
+  return sql
+    .replace(/\/\*![\s\S]*?\*\//g, '')
+    .replace(/\/\*M![\s\S]*?\*\//g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/--.*$/gm, '')
 }
 
 function splitTopLevel(input: string, separator: string): string[] {
@@ -73,14 +88,16 @@ function splitTopLevel(input: string, separator: string): string[] {
   return parts
 }
 
-function splitSqlStatements(sql: string): string[] {
+function extractCreateTableStatements(sql: string): string[] {
   return splitTopLevel(sql, ';')
+    .map((statement) => statement.trim())
+    .filter((statement) => /^create\s+table\b/i.test(statement))
 }
 
-function cleanSql(sql: string): string {
-  return sql
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/--.*$/gm, '')
+function normalizeCreateTableStatement(statement: string): string {
+  return statement
+    // Some dumps include trailing commas before table close.
+    .replace(/,\s*\)\s*$/, ')')
 }
 
 function mapSqlType(typeText: string): string {
@@ -114,106 +131,159 @@ function findFieldByName(fields: Field[], fieldName: string): Field | undefined 
   return fields.find((field) => canonicalName(field.name) === target)
 }
 
-function extractColumnReferenceList(segment: string): string[] {
-  return splitTopLevel(segment, ',').map((item) => stripIdentifierQuotes(item.trim()))
+function readColumnRefName(node: unknown): string | null {
+  if (!node || typeof node !== 'object') return null
+  const value = node as { column?: unknown; value?: unknown; expr?: { column?: unknown } }
+  if (typeof value.column === 'string') return stripIdentifierQuotes(value.column)
+  if (typeof value.value === 'string') return stripIdentifierQuotes(value.value)
+  if (value.expr && typeof value.expr.column === 'string') {
+    return stripIdentifierQuotes(value.expr.column)
+  }
+  return null
 }
 
-function parseForeignKeySegment(segment: string): Omit<SqlForeignKey, 'sourceTable'> | null {
-  const fkMatch = segment.match(
-    /foreign\s+key\s*\(([^)]+)\)\s*references\s+([^\s(]+)\s*\(([^)]+)\)/i
-  )
-  if (!fkMatch) return null
+function readAstReferenceDefinition(
+  sourceTable: string,
+  sourceColumns: string[],
+  referenceDefinition: unknown
+): SqlForeignKey | null {
+  if (!referenceDefinition || typeof referenceDefinition !== 'object') return null
+  const ref = referenceDefinition as {
+    table?: unknown
+    definition?: unknown
+    columns?: unknown
+    reference?: { table?: unknown; definition?: unknown }
+  }
+
+  let targetTable: string | null = null
+  const tableNode = ref.table ?? ref.reference?.table
+
+  if (typeof tableNode === 'string') {
+    targetTable = stripIdentifierQuotes(tableNode)
+  } else if (Array.isArray(tableNode) && tableNode.length > 0) {
+    const first = tableNode[0] as { table?: unknown }
+    if (first && typeof first.table === 'string') {
+      targetTable = stripIdentifierQuotes(first.table)
+    }
+  } else if (tableNode && typeof tableNode === 'object') {
+    const single = tableNode as { table?: unknown }
+    if (typeof single.table === 'string') {
+      targetTable = stripIdentifierQuotes(single.table)
+    }
+  }
+
+  const targetColumnsNodes =
+    (Array.isArray(ref.definition) ? ref.definition : null) ??
+    (Array.isArray(ref.columns) ? ref.columns : null) ??
+    (Array.isArray(ref.reference?.definition) ? ref.reference?.definition : null) ??
+    []
+
+  const targetColumns = targetColumnsNodes
+    .map(readColumnRefName)
+    .filter(Boolean) as string[]
+
+  if (!targetTable || targetColumns.length === 0) return null
 
   return {
-    sourceColumns: extractColumnReferenceList(fkMatch[1]),
-    targetTable: stripIdentifierQuotes(fkMatch[2]),
-    targetColumns: extractColumnReferenceList(fkMatch[3]),
+    sourceTable,
+    sourceColumns,
+    targetTable,
+    targetColumns,
   }
 }
 
-function parseCreateTable(statement: string): {
-  tableName: string
-  columns: Field[]
-  foreignKeys: SqlForeignKey[]
-} | null {
-  const createMatch = statement.match(
-    /create\s+table\s+(?:if\s+not\s+exists\s+)?([^\s(]+)\s*\(([\s\S]*)\)\s*$/i
-  )
-  if (!createMatch) return null
+function parseCreateTableAst(astNode: unknown): ParsedTable | null {
+  if (!astNode || typeof astNode !== 'object') return null
+  const create = astNode as {
+    type?: string
+    keyword?: string
+    table?: unknown
+    create_definitions?: unknown
+  }
 
-  const rawTableName = stripIdentifierQuotes(createMatch[1])
-  const body = createMatch[2].trim()
-  const segments = splitTopLevel(body, ',')
+  if (create.type !== 'create' || create.keyword !== 'table') return null
+  const defs = Array.isArray(create.create_definitions) ? create.create_definitions : []
+  if (defs.length === 0) return null
+
+  let rawTableName = ''
+  const tableNode = create.table
+  if (Array.isArray(tableNode) && tableNode.length > 0) {
+    const first = tableNode[0] as { table?: unknown }
+    rawTableName = typeof first?.table === 'string' ? stripIdentifierQuotes(first.table) : ''
+  } else if (tableNode && typeof tableNode === 'object') {
+    const single = tableNode as { table?: unknown }
+    rawTableName = typeof single.table === 'string' ? stripIdentifierQuotes(single.table) : ''
+  } else if (typeof tableNode === 'string') {
+    rawTableName = stripIdentifierQuotes(tableNode)
+  }
+  if (!rawTableName) return null
 
   const tablePrimaryKeys = new Set<string>()
   const columns: Field[] = []
   const foreignKeys: SqlForeignKey[] = []
 
-  for (const rawSegment of segments) {
-    const segment = rawSegment.trim()
-    if (!segment) continue
+  for (const def of defs) {
+    if (!def || typeof def !== 'object') continue
+    const item = def as {
+      resource?: string
+      column?: unknown
+      definition?: { dataType?: string; length?: number; scale?: number }
+      nullable?: { type?: string }
+      primary?: unknown
+      reference_definition?: unknown
+      constraint_type?: string
+    }
 
-    const normalized = segment.toLowerCase()
+    if (item.resource === 'column') {
+      const columnName = readColumnRefName(item.column)
+      if (!columnName) continue
+      const dataType = item.definition?.dataType ?? 'string'
+      const typeSuffix =
+        item.definition?.length !== undefined
+          ? `(${item.definition.length}${item.definition.scale !== undefined ? `,${item.definition.scale}` : ''})`
+          : ''
+      const sqlType = `${dataType}${typeSuffix}`
 
-    const tablePkMatch = segment.match(
-      /^(?:constraint\s+[^\s]+\s+)?primary\s+key\s*\(([^)]+)\)/i
-    )
-    if (tablePkMatch) {
-      for (const col of extractColumnReferenceList(tablePkMatch[1])) {
-        tablePrimaryKeys.add(canonicalName(col))
+      const field: Field = {
+        id: toSafeId(toSafeId('field', rawTableName), columnName),
+        name: columnName,
+        type: mapSqlType(sqlType),
+        nullable: item.nullable?.type !== 'not null',
+        primaryKey: Boolean(item.primary),
+        foreignKey: Boolean(item.reference_definition),
       }
+
+      if (field.primaryKey) {
+        field.nullable = false
+      }
+
+      if (item.reference_definition) {
+        const fk = readAstReferenceDefinition(rawTableName, [columnName], item.reference_definition)
+        if (fk) foreignKeys.push(fk)
+      }
+
+      columns.push(field)
       continue
     }
 
-    const tableFk = parseForeignKeySegment(segment)
-    if (tableFk) {
-      foreignKeys.push({ sourceTable: rawTableName, ...tableFk })
-      continue
+    if (item.resource === 'constraint') {
+      const constraintType = (item.constraint_type ?? '').toLowerCase()
+      const definitionCols = Array.isArray((item as { definition?: unknown }).definition)
+        ? ((item as { definition?: unknown[] }).definition ?? [])
+            .map(readColumnRefName)
+            .filter(Boolean) as string[]
+        : []
+
+      if (constraintType === 'primary key') {
+        for (const col of definitionCols) tablePrimaryKeys.add(canonicalName(col))
+        continue
+      }
+
+      if (constraintType === 'foreign key' && item.reference_definition) {
+        const fk = readAstReferenceDefinition(rawTableName, definitionCols, item.reference_definition)
+        if (fk) foreignKeys.push(fk)
+      }
     }
-
-    const isTableConstraint =
-      /^\s*unique\s*\(/i.test(segment) ||
-      /^\s*check\s*\(/i.test(segment) ||
-      /^\s*constraint\s+[^\s]+\s+unique\s*\(/i.test(segment) ||
-      /^\s*constraint\s+[^\s]+\s+check\s*\(/i.test(segment)
-
-    if (isTableConstraint) {
-      continue
-    }
-
-    const colMatch = segment.match(/^([`"\[\]A-Za-z0-9_.-]+)\s+(.+)$/)
-    if (!colMatch) continue
-
-    const columnName = stripIdentifierQuotes(colMatch[1])
-    const definition = colMatch[2].trim()
-    const colTypeTokenMatch = definition.match(/^[A-Za-z0-9_]+(?:\s*\([^)]*\))?/)
-    const sqlType = colTypeTokenMatch ? colTypeTokenMatch[0] : definition
-    const columnId = toSafeId(toSafeId('field', rawTableName), columnName)
-
-    const field: Field = {
-      id: columnId,
-      name: columnName,
-      type: mapSqlType(sqlType),
-      nullable: !/\bnot\s+null\b/i.test(definition),
-      primaryKey: /\bprimary\s+key\b/i.test(definition),
-      foreignKey: /\breferences\b/i.test(definition),
-    }
-
-    if (field.primaryKey) {
-      field.nullable = false
-    }
-
-    const inlineFkMatch = definition.match(/references\s+([^\s(]+)\s*\(([^)]+)\)/i)
-    if (inlineFkMatch) {
-      foreignKeys.push({
-        sourceTable: rawTableName,
-        sourceColumns: [columnName],
-        targetTable: stripIdentifierQuotes(inlineFkMatch[1]),
-        targetColumns: extractColumnReferenceList(inlineFkMatch[2]),
-      })
-    }
-
-    columns.push(field)
   }
 
   if (columns.length === 0) return null
@@ -232,25 +302,37 @@ function parseCreateTable(statement: string): {
   }
 }
 
-export function parseSqlSchema(sql: string): { valid: boolean; error?: string; schema?: Schema } {
-  const cleaned = cleanSql(sql)
-  const statements = splitSqlStatements(cleaned)
-  const createStatements = statements
-    .map((statement) => statement.trim())
-    .filter((statement) => /^create\s+table\b/i.test(statement))
+function parseSqlWithAst(cleanedSql: string): ParsedTable[] {
+  const parser = new (NodeSQLParser as unknown as { Parser: new () => { astify: (sql: string, opt?: { database?: string }) => unknown } }).Parser()
+  const createStatements = extractCreateTableStatements(cleanedSql)
+  if (createStatements.length === 0) return []
+  const dialects = ['MySQL', 'MariaDB', 'Postgresql', 'SQLite', 'TransactSQL'] as const
+  const parsedTables: ParsedTable[] = []
 
-  if (createStatements.length === 0) {
-    return { valid: false, error: 'No CREATE TABLE statements found' }
+  for (const rawStatement of createStatements) {
+    const statement = normalizeCreateTableStatement(rawStatement)
+    let parsedTable: ParsedTable | null = null
+
+    for (const dialect of dialects) {
+      try {
+        const ast = parser.astify(statement, { database: dialect })
+        const statements = (Array.isArray(ast) ? ast : [ast]) as unknown[]
+        parsedTable = statements.map(parseCreateTableAst).find(Boolean) as ParsedTable | null
+        if (parsedTable) break
+      } catch {
+        // Try next dialect.
+      }
+    }
+
+    if (parsedTable) {
+      parsedTables.push(parsedTable)
+    }
   }
 
-  const parsedTables = createStatements
-    .map(parseCreateTable)
-    .filter(Boolean) as Array<NonNullable<ReturnType<typeof parseCreateTable>>>
+  return parsedTables
+}
 
-  if (parsedTables.length === 0) {
-    return { valid: false, error: 'Could not parse any tables from SQL input' }
-  }
-
+function buildSchemaFromParsedTables(parsedTables: ParsedTable[]): Schema {
   const models: Model[] = parsedTables.map((table, index) => {
     const col = index % 3
     const row = Math.floor(index / 3)
@@ -320,11 +402,22 @@ export function parseSqlSchema(sql: string): { valid: boolean; error?: string; s
     }
   }
 
+  return { models, relationships }
+}
+
+export function parseSqlSchema(sql: string): { valid: boolean; error?: string; schema?: Schema } {
+  const cleaned = cleanSql(sql)
+  const parsedTables = parseSqlWithAst(cleaned)
+
+  if (parsedTables.length === 0) {
+    return {
+      valid: false,
+      error: 'Could not parse CREATE TABLE statements with SQL parser',
+    }
+  }
+
   return {
     valid: true,
-    schema: {
-      models,
-      relationships,
-    },
+    schema: buildSchemaFromParsedTables(parsedTables),
   }
 }

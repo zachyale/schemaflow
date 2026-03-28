@@ -8,7 +8,9 @@ You can:
 - Define relationships between fields
 - Work with multiple views (tabs)
 - Import JSON into the current view
-- Export the current view or multiple views as JSON
+- Import SQL schema dumps (`CREATE TABLE ...`)
+- Export the current view as JSON or SQL (PostgreSQL/MySQL/SQLite)
+- Export multiple views as JSON
 - Share selected views with a compressed URL
 
 ## Local Development
