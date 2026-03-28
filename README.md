@@ -42,11 +42,17 @@ Schemaflow supports hardcoded sample sessions via URL query params.
 - Single sample: `/?sample=audiobookshelf`
 - Multiple samples (comma-separated): `/?sample=audiobookshelf,grimmory`
 - Multiple samples (repeated params): `/?sample=audiobookshelf&sample=storyteller`
+- Minified books-focused sample: `/?sample=audiobookshelf-minified`
+- Multiple minified samples: `/?sample=audiobookshelf-minified,grimmory-minified,storyteller-minified`
 
 When a sample URL is loaded:
 - The current saved session is cleared
 - Sample views are loaded as tabs
 - The URL is cleaned back to `/`
+
+Available keys include:
+- Full: `audiobookshelf`, `grimmory`, `storyteller`
+- Minified (books + metadata/progress focused): `audiobookshelf-minified`, `grimmory-minified`, `storyteller-minified`
 
 Sample mappings are defined in [`lib/sample-sessions.ts`](/Users/zachyale/dev/github.com/zachyale/schemaflow/lib/sample-sessions.ts), and JSON payloads live in `public/samples`.
 
