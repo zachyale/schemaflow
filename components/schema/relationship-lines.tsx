@@ -14,7 +14,11 @@ function getFieldPosition(
   const cardWidth = 240
   const headerHeight = 44
   const fieldHeight = 32
-  const fieldOffset = headerHeight + fieldIndex * fieldHeight + fieldHeight / 2
+  
+  // If collapsed, connect to the header center
+  const fieldOffset = model.collapsed 
+    ? headerHeight / 2 
+    : headerHeight + fieldIndex * fieldHeight + fieldHeight / 2
 
   return {
     x: side === 'left' ? model.position.x : model.position.x + cardWidth,
