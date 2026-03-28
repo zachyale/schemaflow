@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FileText, Link2, Monitor, Moon, MoreHorizontal, Plus, RotateCcw, Share2, Sun, Trash2, Upload, ZoomIn } from 'lucide-react'
+import { FileText, Link2, Monitor, Moon, MoreHorizontal, Plus, RotateCcw, Share2, Sun, Trash2, Upload } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { useSchema, generateId, validateSchema, getActiveView } from '@/lib/schema-store'
@@ -79,10 +79,6 @@ export function Toolbar({ onAddRelationship, onShare }: ToolbarProps) {
 
   const handleResetLayout = () => {
     dispatch({ type: 'RESET_LAYOUT' })
-  }
-
-  const handleResetZoom = () => {
-    dispatch({ type: 'SET_CANVAS_VIEW', offset: { x: 0, y: 0 }, scale: 1 })
   }
 
   const handleResetSession = () => {
@@ -194,10 +190,6 @@ export function Toolbar({ onAddRelationship, onShare }: ToolbarProps) {
             <DropdownMenuItem onClick={handleResetLayout}>
               <RotateCcw className="h-4 w-4 mr-2" />
               Reset Layout
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleResetZoom}>
-              <ZoomIn className="h-4 w-4 mr-2" />
-              Reset Zoom
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />

@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
+import { RotateCcw } from 'lucide-react'
 import { useSchema, getActiveView } from '@/lib/schema-store'
 import { ModelCard } from './model-card'
 import { RelationshipLines } from './relationship-lines'
@@ -312,6 +313,12 @@ export function Canvas({ onModelDragStateChange }: CanvasProps) {
     return new Set(visibleModels.map((model) => model.id))
   }, [visibleModels])
 
+  const isDefaultZoom = Math.abs(activeView.canvasScale - 1) < 0.001
+
+  const handleResetZoom = useCallback(() => {
+    scheduleCanvasView(offsetRef.current, 1, true)
+  }, [scheduleCanvasView])
+
   return (
     <div
       ref={canvasRef}
@@ -364,8 +371,21 @@ export function Canvas({ onModelDragStateChange }: CanvasProps) {
       </div>
 
       {/* Zoom indicator */}
-      <div className="absolute bottom-4 right-4 rounded bg-secondary px-2 py-1 text-xs text-muted-foreground pointer-events-none">
-        {Math.round(activeView.canvasScale * 100)}%
+      <div className="absolute bottom-4 right-4 flex items-center gap-2">
+        {!isDefaultZoom ? (
+          <button
+            className="rounded bg-secondary px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground"
+            onClick={handleResetZoom}
+          >
+            <span className="inline-flex items-center gap-1">
+              <RotateCcw className="h-3 w-3" />
+              Reset
+            </span>
+          </button>
+        ) : null}
+        <div className="rounded bg-secondary px-2 py-1 text-xs text-muted-foreground pointer-events-none">
+          {Math.round(activeView.canvasScale * 100)}%
+        </div>
       </div>
     </div>
   )
