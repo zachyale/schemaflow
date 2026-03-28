@@ -92,11 +92,11 @@ export function Toolbar({ onAddRelationship }: ToolbarProps) {
   return (
     <>
       <div className="flex items-center gap-2 border-b bg-card px-4 py-2">
-        <div className="flex items-center gap-1 mr-4">
+        <div className="flex items-center gap-1.5 mr-4">
           <div className="h-6 w-6 rounded bg-primary flex items-center justify-center">
             <span className="text-xs font-bold text-primary-foreground">S</span>
           </div>
-          <span className="font-semibold text-foreground">Schema Editor</span>
+          <span className="font-semibold text-foreground">Schemaflow</span>
         </div>
 
         <div className="h-4 w-px bg-border" />
