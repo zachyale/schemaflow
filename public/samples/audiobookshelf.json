@@ -1,0 +1,2937 @@
+[
+  {
+    "name": "Audiobookshelf",
+    "schema": {
+      "models": [
+        {
+          "id": "model-migrationsmeta",
+          "name": "migrationsMeta",
+          "position": {
+            "x": 100,
+            "y": 100
+          },
+          "fields": [
+            {
+              "id": "model-migrationsmeta-key",
+              "name": "key",
+              "type": "string",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-migrationsmeta-value",
+              "name": "value",
+              "type": "string",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            }
+          ]
+        },
+        {
+          "id": "model-users",
+          "name": "users",
+          "position": {
+            "x": 450,
+            "y": 100
+          },
+          "fields": [
+            {
+              "id": "model-users-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-users-username",
+              "name": "username",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-users-email",
+              "name": "email",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-users-pash",
+              "name": "pash",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-users-type",
+              "name": "type",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-users-token",
+              "name": "token",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-users-isactive",
+              "name": "isActive",
+              "type": "boolean",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-users-islocked",
+              "name": "isLocked",
+              "type": "boolean",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-users-lastseen",
+              "name": "lastSeen",
+              "type": "datetime",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-users-permissions",
+              "name": "permissions",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-users-bookmarks",
+              "name": "bookmarks",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-users-extradata",
+              "name": "extraData",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-users-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-users-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            }
+          ]
+        },
+        {
+          "id": "model-sessions",
+          "name": "sessions",
+          "position": {
+            "x": 800,
+            "y": 100
+          },
+          "fields": [
+            {
+              "id": "model-sessions-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-sessions-ipaddress",
+              "name": "ipAddress",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-sessions-useragent",
+              "name": "userAgent",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-sessions-refreshtoken",
+              "name": "refreshToken",
+              "type": "string",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-sessions-expiresat",
+              "name": "expiresAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-sessions-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-sessions-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-sessions-userid",
+              "name": "userId",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-apikeys",
+          "name": "apiKeys",
+          "position": {
+            "x": 100,
+            "y": 380
+          },
+          "fields": [
+            {
+              "id": "model-apikeys-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-apikeys-name",
+              "name": "name",
+              "type": "string",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-apikeys-description",
+              "name": "description",
+              "type": "text",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-apikeys-expiresat",
+              "name": "expiresAt",
+              "type": "datetime",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-apikeys-lastusedat",
+              "name": "lastUsedAt",
+              "type": "datetime",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-apikeys-isactive",
+              "name": "isActive",
+              "type": "boolean",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-apikeys-permissions",
+              "name": "permissions",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-apikeys-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-apikeys-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-apikeys-userid",
+              "name": "userId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            },
+            {
+              "id": "model-apikeys-createdbyuserid",
+              "name": "createdByUserId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-libraries",
+          "name": "libraries",
+          "position": {
+            "x": 450,
+            "y": 380
+          },
+          "fields": [
+            {
+              "id": "model-libraries-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraries-name",
+              "name": "name",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraries-displayorder",
+              "name": "displayOrder",
+              "type": "integer",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraries-icon",
+              "name": "icon",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraries-mediatype",
+              "name": "mediaType",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraries-provider",
+              "name": "provider",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraries-lastscan",
+              "name": "lastScan",
+              "type": "datetime",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraries-lastscanversion",
+              "name": "lastScanVersion",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraries-settings",
+              "name": "settings",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraries-extradata",
+              "name": "extraData",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraries-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraries-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            }
+          ]
+        },
+        {
+          "id": "model-libraryfolders",
+          "name": "libraryFolders",
+          "position": {
+            "x": 800,
+            "y": 380
+          },
+          "fields": [
+            {
+              "id": "model-libraryfolders-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryfolders-path",
+              "name": "path",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryfolders-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryfolders-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryfolders-libraryid",
+              "name": "libraryId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-books",
+          "name": "books",
+          "position": {
+            "x": 100,
+            "y": 660
+          },
+          "fields": [
+            {
+              "id": "model-books-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-title",
+              "name": "title",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-titleignoreprefix",
+              "name": "titleIgnorePrefix",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-subtitle",
+              "name": "subtitle",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-publishedyear",
+              "name": "publishedYear",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-publisheddate",
+              "name": "publishedDate",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-publisher",
+              "name": "publisher",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-description",
+              "name": "description",
+              "type": "text",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-isbn",
+              "name": "isbn",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-asin",
+              "name": "asin",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-language",
+              "name": "language",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-explicit",
+              "name": "explicit",
+              "type": "boolean",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-abridged",
+              "name": "abridged",
+              "type": "boolean",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-coverpath",
+              "name": "coverPath",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-duration",
+              "name": "duration",
+              "type": "float",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-narrators",
+              "name": "narrators",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-audiofiles",
+              "name": "audioFiles",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-ebookfile",
+              "name": "ebookFile",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-chapters",
+              "name": "chapters",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-tags",
+              "name": "tags",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-genres",
+              "name": "genres",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-books-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            }
+          ]
+        },
+        {
+          "id": "model-podcasts",
+          "name": "podcasts",
+          "position": {
+            "x": 450,
+            "y": 660
+          },
+          "fields": [
+            {
+              "id": "model-podcasts-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-title",
+              "name": "title",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-titleignoreprefix",
+              "name": "titleIgnorePrefix",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-author",
+              "name": "author",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-releasedate",
+              "name": "releaseDate",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-feedurl",
+              "name": "feedURL",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-imageurl",
+              "name": "imageURL",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-description",
+              "name": "description",
+              "type": "text",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-itunespageurl",
+              "name": "itunesPageURL",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-itunesid",
+              "name": "itunesId",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-itunesartistid",
+              "name": "itunesArtistId",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-language",
+              "name": "language",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-podcasttype",
+              "name": "podcastType",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-explicit",
+              "name": "explicit",
+              "type": "boolean",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-autodownloadepisodes",
+              "name": "autoDownloadEpisodes",
+              "type": "boolean",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-autodownloadschedule",
+              "name": "autoDownloadSchedule",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-lastepisodecheck",
+              "name": "lastEpisodeCheck",
+              "type": "datetime",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-maxepisodestokeep",
+              "name": "maxEpisodesToKeep",
+              "type": "integer",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-maxnewepisodestodownload",
+              "name": "maxNewEpisodesToDownload",
+              "type": "integer",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-coverpath",
+              "name": "coverPath",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-tags",
+              "name": "tags",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-genres",
+              "name": "genres",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-numepisodes",
+              "name": "numEpisodes",
+              "type": "integer",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcasts-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            }
+          ]
+        },
+        {
+          "id": "model-podcastepisodes",
+          "name": "podcastEpisodes",
+          "position": {
+            "x": 800,
+            "y": 660
+          },
+          "fields": [
+            {
+              "id": "model-podcastepisodes-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-index",
+              "name": "index",
+              "type": "integer",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-season",
+              "name": "season",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-episode",
+              "name": "episode",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-episodetype",
+              "name": "episodeType",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-title",
+              "name": "title",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-subtitle",
+              "name": "subtitle",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-description",
+              "name": "description",
+              "type": "text",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-pubdate",
+              "name": "pubDate",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-enclosureurl",
+              "name": "enclosureURL",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-enclosuresize",
+              "name": "enclosureSize",
+              "type": "bigint",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-enclosuretype",
+              "name": "enclosureType",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-publishedat",
+              "name": "publishedAt",
+              "type": "datetime",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-audiofile",
+              "name": "audioFile",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-chapters",
+              "name": "chapters",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-extradata",
+              "name": "extraData",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-podcastepisodes-podcastid",
+              "name": "podcastId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-libraryitems",
+          "name": "libraryItems",
+          "position": {
+            "x": 100,
+            "y": 940
+          },
+          "fields": [
+            {
+              "id": "model-libraryitems-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-ino",
+              "name": "ino",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-path",
+              "name": "path",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-relpath",
+              "name": "relPath",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-mediaid",
+              "name": "mediaId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-mediatype",
+              "name": "mediaType",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-isfile",
+              "name": "isFile",
+              "type": "boolean",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-ismissing",
+              "name": "isMissing",
+              "type": "boolean",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-isinvalid",
+              "name": "isInvalid",
+              "type": "boolean",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-mtime",
+              "name": "mtime",
+              "type": "datetime",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-ctime",
+              "name": "ctime",
+              "type": "datetime",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-birthtime",
+              "name": "birthtime",
+              "type": "datetime",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-size",
+              "name": "size",
+              "type": "bigint",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-lastscan",
+              "name": "lastScan",
+              "type": "datetime",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-lastscanversion",
+              "name": "lastScanVersion",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-libraryfiles",
+              "name": "libraryFiles",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-extradata",
+              "name": "extraData",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-title",
+              "name": "title",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-titleignoreprefix",
+              "name": "titleIgnorePrefix",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-authornamesfirstlast",
+              "name": "authorNamesFirstLast",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-authornameslastfirst",
+              "name": "authorNamesLastFirst",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-libraryitems-libraryid",
+              "name": "libraryId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            },
+            {
+              "id": "model-libraryitems-libraryfolderid",
+              "name": "libraryFolderId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-mediaprogresses",
+          "name": "mediaProgresses",
+          "position": {
+            "x": 450,
+            "y": 940
+          },
+          "fields": [
+            {
+              "id": "model-mediaprogresses-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaprogresses-mediaitemid",
+              "name": "mediaItemId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaprogresses-mediaitemtype",
+              "name": "mediaItemType",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaprogresses-duration",
+              "name": "duration",
+              "type": "float",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaprogresses-currenttime",
+              "name": "currentTime",
+              "type": "float",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaprogresses-isfinished",
+              "name": "isFinished",
+              "type": "boolean",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaprogresses-hidefromcontinuelistening",
+              "name": "hideFromContinueListening",
+              "type": "boolean",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaprogresses-ebooklocation",
+              "name": "ebookLocation",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaprogresses-ebookprogress",
+              "name": "ebookProgress",
+              "type": "float",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaprogresses-finishedat",
+              "name": "finishedAt",
+              "type": "datetime",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaprogresses-extradata",
+              "name": "extraData",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaprogresses-podcastid",
+              "name": "podcastId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaprogresses-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaprogresses-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaprogresses-userid",
+              "name": "userId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-series",
+          "name": "series",
+          "position": {
+            "x": 800,
+            "y": 940
+          },
+          "fields": [
+            {
+              "id": "model-series-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-series-name",
+              "name": "name",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-series-nameignoreprefix",
+              "name": "nameIgnorePrefix",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-series-description",
+              "name": "description",
+              "type": "text",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-series-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-series-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-series-libraryid",
+              "name": "libraryId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-bookseries",
+          "name": "bookSeries",
+          "position": {
+            "x": 100,
+            "y": 1220
+          },
+          "fields": [
+            {
+              "id": "model-bookseries-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-bookseries-sequence",
+              "name": "sequence",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-bookseries-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-bookseries-bookid",
+              "name": "bookId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            },
+            {
+              "id": "model-bookseries-seriesid",
+              "name": "seriesId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-authors",
+          "name": "authors",
+          "position": {
+            "x": 450,
+            "y": 1220
+          },
+          "fields": [
+            {
+              "id": "model-authors-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-authors-name",
+              "name": "name",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-authors-lastfirst",
+              "name": "lastFirst",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-authors-asin",
+              "name": "asin",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-authors-description",
+              "name": "description",
+              "type": "text",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-authors-imagepath",
+              "name": "imagePath",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-authors-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-authors-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-authors-libraryid",
+              "name": "libraryId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-bookauthors",
+          "name": "bookAuthors",
+          "position": {
+            "x": 800,
+            "y": 1220
+          },
+          "fields": [
+            {
+              "id": "model-bookauthors-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-bookauthors-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-bookauthors-bookid",
+              "name": "bookId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            },
+            {
+              "id": "model-bookauthors-authorid",
+              "name": "authorId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-collections",
+          "name": "collections",
+          "position": {
+            "x": 100,
+            "y": 1500
+          },
+          "fields": [
+            {
+              "id": "model-collections-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-collections-name",
+              "name": "name",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-collections-description",
+              "name": "description",
+              "type": "text",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-collections-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-collections-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-collections-libraryid",
+              "name": "libraryId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-collectionbooks",
+          "name": "collectionBooks",
+          "position": {
+            "x": 450,
+            "y": 1500
+          },
+          "fields": [
+            {
+              "id": "model-collectionbooks-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-collectionbooks-order",
+              "name": "order",
+              "type": "integer",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-collectionbooks-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-collectionbooks-bookid",
+              "name": "bookId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            },
+            {
+              "id": "model-collectionbooks-collectionid",
+              "name": "collectionId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-playlists",
+          "name": "playlists",
+          "position": {
+            "x": 800,
+            "y": 1500
+          },
+          "fields": [
+            {
+              "id": "model-playlists-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playlists-name",
+              "name": "name",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playlists-description",
+              "name": "description",
+              "type": "text",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playlists-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playlists-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playlists-libraryid",
+              "name": "libraryId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            },
+            {
+              "id": "model-playlists-userid",
+              "name": "userId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-playlistmediaitems",
+          "name": "playlistMediaItems",
+          "position": {
+            "x": 100,
+            "y": 1780
+          },
+          "fields": [
+            {
+              "id": "model-playlistmediaitems-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playlistmediaitems-mediaitemid",
+              "name": "mediaItemId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playlistmediaitems-mediaitemtype",
+              "name": "mediaItemType",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playlistmediaitems-order",
+              "name": "order",
+              "type": "integer",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playlistmediaitems-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playlistmediaitems-playlistid",
+              "name": "playlistId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-devices",
+          "name": "devices",
+          "position": {
+            "x": 450,
+            "y": 1780
+          },
+          "fields": [
+            {
+              "id": "model-devices-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-devices-deviceid",
+              "name": "deviceId",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-devices-clientname",
+              "name": "clientName",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-devices-clientversion",
+              "name": "clientVersion",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-devices-ipaddress",
+              "name": "ipAddress",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-devices-devicename",
+              "name": "deviceName",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-devices-deviceversion",
+              "name": "deviceVersion",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-devices-extradata",
+              "name": "extraData",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-devices-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-devices-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-devices-userid",
+              "name": "userId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-playbacksessions",
+          "name": "playbackSessions",
+          "position": {
+            "x": 800,
+            "y": 1780
+          },
+          "fields": [
+            {
+              "id": "model-playbacksessions-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-mediaitemid",
+              "name": "mediaItemId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-mediaitemtype",
+              "name": "mediaItemType",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-displaytitle",
+              "name": "displayTitle",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-displayauthor",
+              "name": "displayAuthor",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-duration",
+              "name": "duration",
+              "type": "float",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-playmethod",
+              "name": "playMethod",
+              "type": "integer",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-mediaplayer",
+              "name": "mediaPlayer",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-starttime",
+              "name": "startTime",
+              "type": "float",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-currenttime",
+              "name": "currentTime",
+              "type": "float",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-serverversion",
+              "name": "serverVersion",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-coverpath",
+              "name": "coverPath",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-timelistening",
+              "name": "timeListening",
+              "type": "integer",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-mediametadata",
+              "name": "mediaMetadata",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-date",
+              "name": "date",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-dayofweek",
+              "name": "dayOfWeek",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-extradata",
+              "name": "extraData",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-playbacksessions-userid",
+              "name": "userId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            },
+            {
+              "id": "model-playbacksessions-deviceid",
+              "name": "deviceId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            },
+            {
+              "id": "model-playbacksessions-libraryid",
+              "name": "libraryId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-feeds",
+          "name": "feeds",
+          "position": {
+            "x": 100,
+            "y": 2060
+          },
+          "fields": [
+            {
+              "id": "model-feeds-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-slug",
+              "name": "slug",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-entitytype",
+              "name": "entityType",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-entityid",
+              "name": "entityId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-entityupdatedat",
+              "name": "entityUpdatedAt",
+              "type": "datetime",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-serveraddress",
+              "name": "serverAddress",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-feedurl",
+              "name": "feedURL",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-imageurl",
+              "name": "imageURL",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-siteurl",
+              "name": "siteURL",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-title",
+              "name": "title",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-description",
+              "name": "description",
+              "type": "text",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-author",
+              "name": "author",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-podcasttype",
+              "name": "podcastType",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-language",
+              "name": "language",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-ownername",
+              "name": "ownerName",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-owneremail",
+              "name": "ownerEmail",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-explicit",
+              "name": "explicit",
+              "type": "boolean",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-preventindexing",
+              "name": "preventIndexing",
+              "type": "boolean",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-coverpath",
+              "name": "coverPath",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feeds-userid",
+              "name": "userId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-feedepisodes",
+          "name": "feedEpisodes",
+          "position": {
+            "x": 450,
+            "y": 2060
+          },
+          "fields": [
+            {
+              "id": "model-feedepisodes-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-title",
+              "name": "title",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-author",
+              "name": "author",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-description",
+              "name": "description",
+              "type": "text",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-siteurl",
+              "name": "siteURL",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-enclosureurl",
+              "name": "enclosureURL",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-enclosuretype",
+              "name": "enclosureType",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-enclosuresize",
+              "name": "enclosureSize",
+              "type": "bigint",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-pubdate",
+              "name": "pubDate",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-season",
+              "name": "season",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-episode",
+              "name": "episode",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-episodetype",
+              "name": "episodeType",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-duration",
+              "name": "duration",
+              "type": "float",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-filepath",
+              "name": "filePath",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-explicit",
+              "name": "explicit",
+              "type": "boolean",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-feedepisodes-feedid",
+              "name": "feedId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-settings",
+          "name": "settings",
+          "position": {
+            "x": 800,
+            "y": 2060
+          },
+          "fields": [
+            {
+              "id": "model-settings-key",
+              "name": "key",
+              "type": "string",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-settings-value",
+              "name": "value",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-settings-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-settings-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            }
+          ]
+        },
+        {
+          "id": "model-custommetadataproviders",
+          "name": "customMetadataProviders",
+          "position": {
+            "x": 100,
+            "y": 2340
+          },
+          "fields": [
+            {
+              "id": "model-custommetadataproviders-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-custommetadataproviders-name",
+              "name": "name",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-custommetadataproviders-mediatype",
+              "name": "mediaType",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-custommetadataproviders-url",
+              "name": "url",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-custommetadataproviders-authheadervalue",
+              "name": "authHeaderValue",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-custommetadataproviders-extradata",
+              "name": "extraData",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-custommetadataproviders-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-custommetadataproviders-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            }
+          ]
+        },
+        {
+          "id": "model-mediaitemshares",
+          "name": "mediaItemShares",
+          "position": {
+            "x": 450,
+            "y": 2340
+          },
+          "fields": [
+            {
+              "id": "model-mediaitemshares-id",
+              "name": "id",
+              "type": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaitemshares-mediaitemid",
+              "name": "mediaItemId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaitemshares-mediaitemtype",
+              "name": "mediaItemType",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaitemshares-slug",
+              "name": "slug",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaitemshares-pash",
+              "name": "pash",
+              "type": "string",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaitemshares-expiresat",
+              "name": "expiresAt",
+              "type": "datetime",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaitemshares-extradata",
+              "name": "extraData",
+              "type": "json",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaitemshares-isdownloadable",
+              "name": "isDownloadable",
+              "type": "boolean",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaitemshares-createdat",
+              "name": "createdAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaitemshares-updatedat",
+              "name": "updatedAt",
+              "type": "datetime",
+              "nullable": false,
+              "primaryKey": false,
+              "foreignKey": false
+            },
+            {
+              "id": "model-mediaitemshares-userid",
+              "name": "userId",
+              "type": "uuid",
+              "nullable": true,
+              "primaryKey": false,
+              "foreignKey": true
+            }
+          ]
+        },
+        {
+          "id": "model-sequelizemeta",
+          "name": "SequelizeMeta",
+          "position": {
+            "x": 800,
+            "y": 2340
+          },
+          "fields": [
+            {
+              "id": "model-sequelizemeta-name",
+              "name": "name",
+              "type": "string",
+              "nullable": false,
+              "primaryKey": true,
+              "foreignKey": false
+            }
+          ]
+        }
+      ],
+      "relationships": [
+        {
+          "id": "rel-1",
+          "fromModelId": "model-sessions",
+          "fromFieldId": "model-sessions-userid",
+          "toModelId": "model-users",
+          "toFieldId": "model-users-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-2",
+          "fromModelId": "model-apikeys",
+          "fromFieldId": "model-apikeys-userid",
+          "toModelId": "model-users",
+          "toFieldId": "model-users-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-3",
+          "fromModelId": "model-apikeys",
+          "fromFieldId": "model-apikeys-createdbyuserid",
+          "toModelId": "model-users",
+          "toFieldId": "model-users-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-4",
+          "fromModelId": "model-libraryfolders",
+          "fromFieldId": "model-libraryfolders-libraryid",
+          "toModelId": "model-libraries",
+          "toFieldId": "model-libraries-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-5",
+          "fromModelId": "model-podcastepisodes",
+          "fromFieldId": "model-podcastepisodes-podcastid",
+          "toModelId": "model-podcasts",
+          "toFieldId": "model-podcasts-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-6",
+          "fromModelId": "model-libraryitems",
+          "fromFieldId": "model-libraryitems-libraryid",
+          "toModelId": "model-libraries",
+          "toFieldId": "model-libraries-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-7",
+          "fromModelId": "model-libraryitems",
+          "fromFieldId": "model-libraryitems-libraryfolderid",
+          "toModelId": "model-libraryfolders",
+          "toFieldId": "model-libraryfolders-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-8",
+          "fromModelId": "model-mediaprogresses",
+          "fromFieldId": "model-mediaprogresses-userid",
+          "toModelId": "model-users",
+          "toFieldId": "model-users-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-9",
+          "fromModelId": "model-series",
+          "fromFieldId": "model-series-libraryid",
+          "toModelId": "model-libraries",
+          "toFieldId": "model-libraries-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-10",
+          "fromModelId": "model-bookseries",
+          "fromFieldId": "model-bookseries-bookid",
+          "toModelId": "model-books",
+          "toFieldId": "model-books-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-11",
+          "fromModelId": "model-bookseries",
+          "fromFieldId": "model-bookseries-seriesid",
+          "toModelId": "model-series",
+          "toFieldId": "model-series-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-12",
+          "fromModelId": "model-authors",
+          "fromFieldId": "model-authors-libraryid",
+          "toModelId": "model-libraries",
+          "toFieldId": "model-libraries-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-13",
+          "fromModelId": "model-bookauthors",
+          "fromFieldId": "model-bookauthors-bookid",
+          "toModelId": "model-books",
+          "toFieldId": "model-books-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-14",
+          "fromModelId": "model-bookauthors",
+          "fromFieldId": "model-bookauthors-authorid",
+          "toModelId": "model-authors",
+          "toFieldId": "model-authors-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-15",
+          "fromModelId": "model-collections",
+          "fromFieldId": "model-collections-libraryid",
+          "toModelId": "model-libraries",
+          "toFieldId": "model-libraries-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-16",
+          "fromModelId": "model-collectionbooks",
+          "fromFieldId": "model-collectionbooks-bookid",
+          "toModelId": "model-books",
+          "toFieldId": "model-books-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-17",
+          "fromModelId": "model-collectionbooks",
+          "fromFieldId": "model-collectionbooks-collectionid",
+          "toModelId": "model-collections",
+          "toFieldId": "model-collections-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-18",
+          "fromModelId": "model-playlists",
+          "fromFieldId": "model-playlists-libraryid",
+          "toModelId": "model-libraries",
+          "toFieldId": "model-libraries-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-19",
+          "fromModelId": "model-playlists",
+          "fromFieldId": "model-playlists-userid",
+          "toModelId": "model-users",
+          "toFieldId": "model-users-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-20",
+          "fromModelId": "model-playlistmediaitems",
+          "fromFieldId": "model-playlistmediaitems-playlistid",
+          "toModelId": "model-playlists",
+          "toFieldId": "model-playlists-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-21",
+          "fromModelId": "model-devices",
+          "fromFieldId": "model-devices-userid",
+          "toModelId": "model-users",
+          "toFieldId": "model-users-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-22",
+          "fromModelId": "model-playbacksessions",
+          "fromFieldId": "model-playbacksessions-userid",
+          "toModelId": "model-users",
+          "toFieldId": "model-users-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-23",
+          "fromModelId": "model-playbacksessions",
+          "fromFieldId": "model-playbacksessions-deviceid",
+          "toModelId": "model-devices",
+          "toFieldId": "model-devices-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-24",
+          "fromModelId": "model-playbacksessions",
+          "fromFieldId": "model-playbacksessions-libraryid",
+          "toModelId": "model-libraries",
+          "toFieldId": "model-libraries-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-25",
+          "fromModelId": "model-feeds",
+          "fromFieldId": "model-feeds-userid",
+          "toModelId": "model-users",
+          "toFieldId": "model-users-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-26",
+          "fromModelId": "model-feedepisodes",
+          "fromFieldId": "model-feedepisodes-feedid",
+          "toModelId": "model-feeds",
+          "toFieldId": "model-feeds-id",
+          "type": "many-to-one"
+        },
+        {
+          "id": "rel-27",
+          "fromModelId": "model-mediaitemshares",
+          "fromFieldId": "model-mediaitemshares-userid",
+          "toModelId": "model-users",
+          "toFieldId": "model-users-id",
+          "type": "many-to-one"
+        }
+      ]
+    }
+  }
+]

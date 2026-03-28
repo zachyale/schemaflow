@@ -4,7 +4,7 @@ import { useReducer, useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { SchemaContext, schemaReducer, initialState, saveSession, loadSession, generateId } from '@/lib/schema-store'
 import { decompressFromUrl } from '@/lib/compression'
-import { SAMPLE_SESSIONS } from '@/lib/sample-sessions'
+import { SAMPLE_SESSION_FILES } from '@/lib/sample-sessions'
 import type { Schema, SchemaView, Model, Field, Relationship } from '@/lib/schema-types'
 import type { SchemaState } from '@/lib/schema-store'
 import { Toolbar } from './toolbar'
@@ -108,54 +108,104 @@ export function SchemaEditor() {
     }
   }
 
+  const getRequestedSamples = (): string[] => {
+    const raw = searchParams.getAll('sample')
+    if (raw.length === 0) return []
+
+    const keys = raw
+      .flatMap((item) => item.split(','))
+      .map((item) => item.trim())
+      .filter(Boolean)
+
+    return Array.from(new Set(keys))
+  }
+
   // Load session on mount and handle shared URL import via compression utility
   useEffect(() => {
-    const sampleParam = searchParams.get('sample')
-    if (sampleParam) {
-      const sampleViews = SAMPLE_SESSIONS[sampleParam]
-      if (sampleViews) {
-        dispatch({ type: 'RESET_SESSION' })
-        dispatch({ type: 'LOAD_STATE', state: buildStateFromImportedViews(sampleViews) })
-        router.replace('/', { scroll: false })
+    let cancelled = false
+
+    const initialize = async () => {
+      const requestedSamples = getRequestedSamples()
+      if (requestedSamples.length > 0) {
+        const samplePaths = requestedSamples
+          .map((key) => SAMPLE_SESSION_FILES[key])
+          .filter(Boolean)
+
+        if (samplePaths.length > 0) {
+          try {
+            const responses = await Promise.all(samplePaths.map((path) => fetch(path)))
+            const payloads = await Promise.all(
+              responses
+                .filter((response) => response.ok)
+                .map((response) => response.json())
+            )
+
+            const sampleViews = payloads.flatMap((payload) =>
+              Array.isArray(payload) ? (payload as Array<{ name: string; schema: Schema }>) : []
+            )
+
+            if (sampleViews.length > 0) {
+              if (!cancelled) {
+                dispatch({ type: 'RESET_SESSION' })
+                dispatch({ type: 'LOAD_STATE', state: buildStateFromImportedViews(sampleViews) })
+                router.replace('/', { scroll: false })
+                setMounted(true)
+              }
+              return
+            }
+          } catch (e) {
+            console.error('Failed to load sample schemas:', e)
+          }
+        }
+      }
+
+      // First load saved session
+      const savedState = loadSession()
+      if (savedState && !cancelled) {
+        dispatch({ type: 'LOAD_STATE', state: savedState })
+      }
+      
+      // Check for shared data in URL (supports both old 'share' and new compact 's' params)
+      const shareParam = searchParams.get('s') || searchParams.get('share')
+      if (shareParam) {
+        try {
+          const decompressed = decompressFromUrl(shareParam)
+          if (decompressed) {
+            const parsed = JSON.parse(decompressed)
+            
+            // Handle both compact format and legacy full format
+            if (isCompactFormat(parsed)) {
+              // New compact format
+              const importedViews = parsed.map((compactView) => fromCompactView(compactView))
+              if (!cancelled) {
+                dispatch({ type: 'LOAD_STATE', state: buildStateFromImportedViews(importedViews) })
+              }
+            } else {
+              // Legacy full format
+              const sharedViews = parsed as Array<{ name: string; schema: Schema }>
+              if (!cancelled) {
+                dispatch({ type: 'LOAD_STATE', state: buildStateFromImportedViews(sharedViews) })
+              }
+            }
+            
+            // Clear the share param from URL
+            router.replace('/', { scroll: false })
+          }
+        } catch (e) {
+          console.error('Failed to import shared schema:', e)
+        }
+      }
+      
+      if (!cancelled) {
         setMounted(true)
-        return
       }
     }
 
-    // First load saved session
-    const savedState = loadSession()
-    if (savedState) {
-      dispatch({ type: 'LOAD_STATE', state: savedState })
+    initialize()
+
+    return () => {
+      cancelled = true
     }
-    
-    // Check for shared data in URL (supports both old 'share' and new compact 's' params)
-    const shareParam = searchParams.get('s') || searchParams.get('share')
-    if (shareParam) {
-      try {
-        const decompressed = decompressFromUrl(shareParam)
-        if (decompressed) {
-          const parsed = JSON.parse(decompressed)
-          
-          // Handle both compact format and legacy full format
-          if (isCompactFormat(parsed)) {
-            // New compact format
-            const importedViews = parsed.map((compactView) => fromCompactView(compactView))
-            dispatch({ type: 'LOAD_STATE', state: buildStateFromImportedViews(importedViews) })
-          } else {
-            // Legacy full format
-            const sharedViews = parsed as Array<{ name: string; schema: Schema }>
-            dispatch({ type: 'LOAD_STATE', state: buildStateFromImportedViews(sharedViews) })
-          }
-          
-          // Clear the share param from URL
-          router.replace('/', { scroll: false })
-        }
-      } catch (e) {
-        console.error('Failed to import shared schema:', e)
-      }
-    }
-    
-    setMounted(true)
   }, [searchParams, router])
 
   // Save session on state changes (debounced)

@@ -35,6 +35,21 @@ npm run start
 npm run lint
 ```
 
+## Sample Sessions
+
+Schemaflow supports hardcoded sample sessions via URL query params.
+
+- Single sample: `/?sample=audiobookshelf`
+- Multiple samples (comma-separated): `/?sample=audiobookshelf,grimmory`
+- Multiple samples (repeated params): `/?sample=audiobookshelf&sample=storyteller`
+
+When a sample URL is loaded:
+- The current saved session is cleared
+- Sample views are loaded as tabs
+- The URL is cleaned back to `/`
+
+Sample mappings are defined in [`lib/sample-sessions.ts`](/Users/zachyale/dev/github.com/zachyale/schemaflow/lib/sample-sessions.ts), and JSON payloads live in `public/samples`.
+
 ## JSON Formats
 
 Schemaflow currently uses two JSON shapes depending on action:
