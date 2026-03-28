@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Link2, Monitor, Moon, MoreHorizontal, Plus, RotateCcw, Share2, Sun, Trash2, Upload, ZoomIn } from 'lucide-react'
+import { FileText, Link2, Monitor, Moon, MoreHorizontal, Plus, RotateCcw, Share2, Sun, Trash2, Upload, ZoomIn } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { useSchema, generateId, validateSchema, getActiveView } from '@/lib/schema-store'
@@ -18,7 +18,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -46,7 +47,7 @@ const SAMPLE_SCHEMA = `{
 
 export function Toolbar({ onAddRelationship, onShare }: ToolbarProps) {
   const { state, dispatch } = useSchema()
-  const { setTheme } = useTheme()
+  const { theme, setTheme } = useTheme()
   const activeView = getActiveView(state)
   const [importOpen, setImportOpen] = useState(false)
   const [importJson, setImportJson] = useState('')
@@ -123,22 +124,42 @@ export function Toolbar({ onAddRelationship, onShare }: ToolbarProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5">
+              <FileText className="h-4 w-4" />
+              Files
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onShare}>
+              <Share2 className="h-4 w-4 mr-2" />
+              Export
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleResetSession} className="text-destructive focus:text-destructive">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Clear Session
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5">
               <Plus className="h-4 w-4" />
-              Add
+              New
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             <DropdownMenuItem onClick={handleAddModel}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Model
+              Model
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onAddRelationship}>
               <Link2 className="h-4 w-4 mr-2" />
-              Add Relationship
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setImportOpen(true)}>
-              <Upload className="h-4 w-4 mr-2" />
-              Import Models
+              Relationship
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -153,14 +174,6 @@ export function Toolbar({ onAddRelationship, onShare }: ToolbarProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Export</DropdownMenuLabel>
-            <DropdownMenuItem onClick={onShare}>
-              <Share2 className="h-4 w-4 mr-2" />
-              Share & Export
-            </DropdownMenuItem>
-
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Session</DropdownMenuLabel>
             <DropdownMenuItem onClick={handleResetLayout}>
               <RotateCcw className="h-4 w-4 mr-2" />
               Reset Layout
@@ -169,25 +182,22 @@ export function Toolbar({ onAddRelationship, onShare }: ToolbarProps) {
               <ZoomIn className="h-4 w-4 mr-2" />
               Reset Zoom
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleResetSession} className="text-destructive focus:text-destructive">
-              <Trash2 className="h-4 w-4 mr-2" />
-              Reset Session
-            </DropdownMenuItem>
 
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>Theme</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => setTheme('light')}>
-              <Sun className="h-4 w-4 mr-2" />
-              Light
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme('dark')}>
-              <Moon className="h-4 w-4 mr-2" />
-              Dark
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme('system')}>
-              <Monitor className="h-4 w-4 mr-2" />
-              System
-            </DropdownMenuItem>
+            <DropdownMenuRadioGroup value={theme ?? 'system'} onValueChange={(value) => setTheme(value)}>
+              <DropdownMenuRadioItem value="light">
+                <Sun className="h-4 w-4 mr-2" />
+                Light
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="dark">
+                <Moon className="h-4 w-4 mr-2" />
+                Dark
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="system">
+                <Monitor className="h-4 w-4 mr-2" />
+                System
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
