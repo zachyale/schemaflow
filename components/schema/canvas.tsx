@@ -8,8 +8,10 @@ import { RelationshipLines } from './relationship-lines'
 export function Canvas() {
   const { state, dispatch } = useSchema()
   const canvasRef = useRef<HTMLDivElement>(null)
+  const backgroundRef = useRef<HTMLDivElement>(null)
   const [isPanning, setIsPanning] = useState(false)
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+  const [lastPinchDistance, setLastPinchDistance] = useState<number | null>(null)
 
   const handleWheel = useCallback(
     (e: WheelEvent) => {
@@ -23,7 +25,7 @@ export function Canvas() {
           scale: state.canvasScale + delta,
         })
       } else {
-        // Pan
+        // Pan via scroll
         dispatch({
           type: 'SET_CANVAS_OFFSET',
           offset: {
@@ -36,29 +38,46 @@ export function Canvas() {
     [dispatch, state.canvasScale, state.canvasOffset]
   )
 
-  const handleMouseDown = useCallback(
+  const handleBackgroundMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      // Only pan on middle mouse or if clicking on canvas background
-      if (e.button === 1 || (e.button === 0 && e.target === canvasRef.current)) {
+      // Left click on background or middle click anywhere starts panning
+      if (e.button === 0 || e.button === 1) {
         e.preventDefault()
         setIsPanning(true)
         setPanStart({ x: e.clientX, y: e.clientY })
-
-        // Deselect if clicking on canvas background
-        if (e.target === canvasRef.current) {
-          dispatch({ type: 'SET_SELECTION', selection: null })
-        }
+        dispatch({ type: 'SET_SELECTION', selection: null })
       }
     },
     [dispatch]
   )
 
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
+  // Touch handlers for iPad/mobile
+  const handleBackgroundTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (e.touches.length === 1) {
+        // Single finger - pan
+        const touch = e.touches[0]
+        setIsPanning(true)
+        setPanStart({ x: touch.clientX, y: touch.clientY })
+        dispatch({ type: 'SET_SELECTION', selection: null })
+      } else if (e.touches.length === 2) {
+        // Two fingers - prepare for pinch zoom
+        const distance = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        )
+        setLastPinchDistance(distance)
+      }
+    },
+    [dispatch]
+  )
+
+  const handlePointerMove = useCallback(
+    (clientX: number, clientY: number) => {
       if (!isPanning) return
 
-      const dx = (e.clientX - panStart.x) / state.canvasScale
-      const dy = (e.clientY - panStart.y) / state.canvasScale
+      const dx = (clientX - panStart.x) / state.canvasScale
+      const dy = (clientY - panStart.y) / state.canvasScale
 
       dispatch({
         type: 'SET_CANVAS_OFFSET',
@@ -68,13 +87,44 @@ export function Canvas() {
         },
       })
 
-      setPanStart({ x: e.clientX, y: e.clientY })
+      setPanStart({ x: clientX, y: clientY })
     },
     [isPanning, panStart, state.canvasScale, state.canvasOffset, dispatch]
   )
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      handlePointerMove(e.clientX, e.clientY)
+    },
+    [handlePointerMove]
+  )
+
+  const handleTouchMove = useCallback(
+    (e: TouchEvent) => {
+      if (e.touches.length === 1 && isPanning) {
+        e.preventDefault()
+        const touch = e.touches[0]
+        handlePointerMove(touch.clientX, touch.clientY)
+      } else if (e.touches.length === 2 && lastPinchDistance !== null) {
+        e.preventDefault()
+        const distance = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        )
+        const delta = (distance - lastPinchDistance) * 0.005
+        dispatch({
+          type: 'SET_CANVAS_SCALE',
+          scale: state.canvasScale + delta,
+        })
+        setLastPinchDistance(distance)
+      }
+    },
+    [isPanning, lastPinchDistance, handlePointerMove, dispatch, state.canvasScale]
+  )
+
+  const handlePointerUp = useCallback(() => {
     setIsPanning(false)
+    setLastPinchDistance(null)
   }, [])
 
   useEffect(() => {
@@ -82,15 +132,19 @@ export function Canvas() {
     if (!canvas) return
 
     canvas.addEventListener('wheel', handleWheel, { passive: false })
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false })
     window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
+    window.addEventListener('mouseup', handlePointerUp)
+    window.addEventListener('touchend', handlePointerUp)
 
     return () => {
       canvas.removeEventListener('wheel', handleWheel)
+      canvas.removeEventListener('touchmove', handleTouchMove)
       window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('mouseup', handlePointerUp)
+      window.removeEventListener('touchend', handlePointerUp)
     }
-  }, [handleWheel, handleMouseMove, handleMouseUp])
+  }, [handleWheel, handleTouchMove, handleMouseMove, handlePointerUp])
 
   return (
     <div
@@ -98,15 +152,22 @@ export function Canvas() {
       data-canvas
       className="relative flex-1 overflow-hidden bg-background"
       style={{
-        backgroundImage: `
-          radial-gradient(circle, var(--border) 1px, transparent 1px)
-        `,
-        backgroundSize: `${20 * state.canvasScale}px ${20 * state.canvasScale}px`,
-        backgroundPosition: `${state.canvasOffset.x * state.canvasScale}px ${state.canvasOffset.y * state.canvasScale}px`,
         cursor: isPanning ? 'grabbing' : 'default',
       }}
-      onMouseDown={handleMouseDown}
     >
+      {/* Background layer for panning - this is the clickable area */}
+      <div
+        ref={backgroundRef}
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `radial-gradient(circle, var(--border) 1px, transparent 1px)`,
+          backgroundSize: `${20 * state.canvasScale}px ${20 * state.canvasScale}px`,
+          backgroundPosition: `${state.canvasOffset.x * state.canvasScale}px ${state.canvasOffset.y * state.canvasScale}px`,
+        }}
+        onMouseDown={handleBackgroundMouseDown}
+        onTouchStart={handleBackgroundTouchStart}
+      />
+
       {/* Canvas content container */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -134,7 +195,7 @@ export function Canvas() {
       </div>
 
       {/* Zoom indicator */}
-      <div className="absolute bottom-4 right-4 rounded bg-secondary px-2 py-1 text-xs text-muted-foreground">
+      <div className="absolute bottom-4 right-4 rounded bg-secondary px-2 py-1 text-xs text-muted-foreground pointer-events-none">
         {Math.round(state.canvasScale * 100)}%
       </div>
     </div>
