@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, Link2, Plus, RotateCcw, Upload } from 'lucide-react'
+import { Download, Link2, PanelRight, Plus, RotateCcw, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSchema, generateId, validateSchema } from '@/lib/schema-store'
 import type { Model } from '@/lib/schema-types'
@@ -14,12 +14,15 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 interface ToolbarProps {
   onAddRelationship: () => void
+  inspectorOpen: boolean
+  onToggleInspector: () => void
 }
 
-export function Toolbar({ onAddRelationship }: ToolbarProps) {
+export function Toolbar({ onAddRelationship, inspectorOpen, onToggleInspector }: ToolbarProps) {
   const { state, dispatch } = useSchema()
   const [importOpen, setImportOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
@@ -129,6 +132,19 @@ export function Toolbar({ onAddRelationship }: ToolbarProps) {
           <RotateCcw className="h-4 w-4 mr-1.5" />
           Reset Layout
         </Button>
+
+        <div className="flex-1" />
+
+        <Button 
+          variant={inspectorOpen ? "secondary" : "ghost"} 
+          size="sm" 
+          onClick={onToggleInspector}
+          title={inspectorOpen ? "Hide Inspector" : "Show Inspector"}
+        >
+          <PanelRight className="h-4 w-4" />
+        </Button>
+
+        <ThemeToggle />
       </div>
 
       {/* Import Dialog */}
