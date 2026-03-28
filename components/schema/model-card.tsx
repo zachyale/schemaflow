@@ -50,21 +50,6 @@ export function ModelCard({ model }: ModelCardProps) {
     [startDrag]
   )
 
-  const handleTouchStart = useCallback(
-    (e: React.TouchEvent) => {
-      if ((e.target as HTMLElement).closest('button')) return
-      if ((e.target as HTMLElement).closest('[data-field]')) return
-
-      // Only handle single touch for dragging
-      if (e.touches.length === 1) {
-        e.preventDefault()
-        const touch = e.touches[0]
-        startDrag(touch.clientX, touch.clientY)
-      }
-    },
-    [startDrag]
-  )
-
   const moveDrag = useCallback(
     (clientX: number, clientY: number) => {
       if (!isDragging) return
@@ -83,23 +68,12 @@ export function ModelCard({ model }: ModelCardProps) {
         position: { x: Math.max(0, newX), y: Math.max(0, newY) },
       })
     },
-    [isDragging, state.canvasScale, dragOffset, state.canvasOffset, dispatch, model.id]
+    [isDragging, dragOffset, state.canvasScale, state.canvasOffset, dispatch, model.id]
   )
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       moveDrag(e.clientX, e.clientY)
-    },
-    [moveDrag]
-  )
-
-  const handleTouchMove = useCallback(
-    (e: TouchEvent) => {
-      if (e.touches.length === 1) {
-        e.preventDefault()
-        const touch = e.touches[0]
-        moveDrag(touch.clientX, touch.clientY)
-      }
     },
     [moveDrag]
   )
@@ -128,11 +102,48 @@ export function ModelCard({ model }: ModelCardProps) {
 
   const handleTouchStartWrapper = useCallback(
     (e: React.TouchEvent) => {
-      handleTouchStart(e)
+      if ((e.target as HTMLElement).closest('button')) return
+      if ((e.target as HTMLElement).closest('[data-field]')) return
+      if (e.touches.length !== 1) return
 
-      const handleMove = (e: TouchEvent) => handleTouchMove(e)
+      e.preventDefault()
+      e.stopPropagation()
+      
+      const touch = e.touches[0]
+      const rect = cardRef.current?.getBoundingClientRect()
+      const canvas = cardRef.current?.closest('[data-canvas]')
+      if (!rect || !canvas) return
+
+      const scale = state.canvasScale
+
+      setIsDragging(true)
+      setDragOffset({
+        x: (touch.clientX - rect.left) / scale,
+        y: (touch.clientY - rect.top) / scale,
+      })
+      dispatch({ type: 'SET_SELECTION', selection: { type: 'model', modelId: model.id } })
+
+      const handleMove = (e: TouchEvent) => {
+        if (e.touches.length === 1) {
+          e.preventDefault()
+          const touch = e.touches[0]
+          const canvasRect = canvas.getBoundingClientRect()
+          const currentScale = state.canvasScale
+          const offsetX = (touch.clientX - rect.left) / currentScale
+          const offsetY = (touch.clientY - rect.top) / currentScale
+          const newX = (touch.clientX - canvasRect.left) / currentScale - offsetX - state.canvasOffset.x
+          const newY = (touch.clientY - canvasRect.top) / currentScale - offsetY - state.canvasOffset.y
+
+          dispatch({
+            type: 'MOVE_MODEL',
+            modelId: model.id,
+            position: { x: Math.max(0, newX), y: Math.max(0, newY) },
+          })
+        }
+      }
+      
       const handleEnd = () => {
-        handleDragEnd()
+        setIsDragging(false)
         window.removeEventListener('touchmove', handleMove)
         window.removeEventListener('touchend', handleEnd)
       }
@@ -140,7 +151,7 @@ export function ModelCard({ model }: ModelCardProps) {
       window.addEventListener('touchmove', handleMove, { passive: false })
       window.addEventListener('touchend', handleEnd)
     },
-    [handleTouchStart, handleTouchMove, handleDragEnd]
+    [state.canvasScale, state.canvasOffset, dispatch, model.id]
   )
 
   const handleAddField = () => {
@@ -187,6 +198,7 @@ export function ModelCard({ model }: ModelCardProps) {
       style={{
         left: model.position.x,
         top: model.position.y,
+        touchAction: 'none',
       }}
       onMouseDown={handleMouseDownWrapper}
       onTouchStart={handleTouchStartWrapper}
