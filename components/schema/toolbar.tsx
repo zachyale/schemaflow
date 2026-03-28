@@ -23,12 +23,50 @@ interface ToolbarProps {
   onToggleInspector: () => void
 }
 
+const SAMPLE_SCHEMA = `{
+  "models": [
+    {
+      "id": "model-1",
+      "name": "User",
+      "position": { "x": 100, "y": 100 },
+      "fields": [
+        { "id": "field-1", "name": "id", "type": "uuid", "primaryKey": true },
+        { "id": "field-2", "name": "email", "type": "string", "unique": true },
+        { "id": "field-3", "name": "name", "type": "string" },
+        { "id": "field-4", "name": "created_at", "type": "timestamp" }
+      ]
+    },
+    {
+      "id": "model-2",
+      "name": "Post",
+      "position": { "x": 400, "y": 100 },
+      "fields": [
+        { "id": "field-5", "name": "id", "type": "uuid", "primaryKey": true },
+        { "id": "field-6", "name": "title", "type": "string" },
+        { "id": "field-7", "name": "author_id", "type": "uuid", "foreignKey": true }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel-1",
+      "name": "author",
+      "fromModelId": "model-2",
+      "fromFieldId": "field-7",
+      "toModelId": "model-1",
+      "toFieldId": "field-1",
+      "type": "many-to-one"
+    }
+  ]
+}`
+
 export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleInspector }: ToolbarProps) {
   const { state, dispatch } = useSchema()
   const activeView = getActiveView(state)
   const [importOpen, setImportOpen] = useState(false)
   const [importJson, setImportJson] = useState('')
   const [importError, setImportError] = useState('')
+  const [showSample, setShowSample] = useState(false)
 
   const handleAddModel = () => {
     const newModel: Model = {
@@ -130,20 +168,60 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
       </div>
 
       {/* Import Dialog */}
-      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+      <Dialog open={importOpen} onOpenChange={(open) => {
+        setImportOpen(open)
+        if (!open) {
+          setShowSample(false)
+          setImportError('')
+        }
+      }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Import Schema</DialogTitle>
             <DialogDescription>
-              Paste your JSON schema below. This will replace the current schema.
+              Paste your JSON schema below. This will replace the current schema in the current view.
             </DialogDescription>
           </DialogHeader>
-          <Textarea
-            value={importJson}
-            onChange={(e) => setImportJson(e.target.value)}
-            placeholder='{"models": [...], "relationships": [...]}'
-            className="h-80 font-mono text-sm"
-          />
+          
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Button 
+                variant="link" 
+                size="sm" 
+                className="h-auto p-0 text-xs"
+                onClick={() => setShowSample(!showSample)}
+              >
+                {showSample ? 'Hide sample schema' : 'Show sample schema'}
+              </Button>
+              {showSample && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => {
+                    setImportJson(SAMPLE_SCHEMA)
+                    setShowSample(false)
+                  }}
+                >
+                  Use sample
+                </Button>
+              )}
+            </div>
+            
+            {showSample && (
+              <pre className="rounded-md bg-muted p-3 text-xs font-mono overflow-auto max-h-48 border">
+                {SAMPLE_SCHEMA}
+              </pre>
+            )}
+            
+            <Textarea
+              value={importJson}
+              onChange={(e) => setImportJson(e.target.value)}
+              placeholder='{"models": [...], "relationships": [...]}'
+              className="h-64 font-mono text-sm"
+            />
+          </div>
+          
           {importError && (
             <p className="text-sm text-destructive">{importError}</p>
           )}
@@ -151,7 +229,9 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
             <Button variant="outline" onClick={() => setImportOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleImport}>Import</Button>
+            <Button onClick={handleImport} disabled={!importJson.trim()}>
+              Import
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
