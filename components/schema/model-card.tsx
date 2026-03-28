@@ -121,7 +121,7 @@ export function ModelCard({ model, scale }: ModelCardProps) {
       className={cn(
         'absolute min-w-[240px] rounded-lg border bg-card shadow-lg transition-shadow select-none',
         isSelected && 'ring-2 ring-primary shadow-xl',
-        isDragging && 'cursor-grabbing z-50'
+        isDragging ? 'cursor-grabbing z-50 shadow-2xl' : 'cursor-grab'
       )}
       style={{
         left: model.position.x,
