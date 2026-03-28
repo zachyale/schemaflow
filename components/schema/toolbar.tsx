@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 interface ToolbarProps {
   onAddRelationship: () => void
@@ -129,6 +130,10 @@ export function Toolbar({ onAddRelationship }: ToolbarProps) {
           <RotateCcw className="h-4 w-4 mr-1.5" />
           Reset Layout
         </Button>
+
+        <div className="flex-1" />
+
+        <ThemeToggle />
       </div>
 
       {/* Import Dialog */}
