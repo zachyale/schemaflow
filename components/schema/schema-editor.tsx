@@ -14,6 +14,7 @@ export function SchemaEditor() {
   const [inspectorOpen, setInspectorOpen] = useState(true)
   const [mounted, setMounted] = useState(false)
 
+  // Ensure client-side only rendering to prevent hydration mismatches
   useEffect(() => {
     setMounted(true)
   }, [])

@@ -101,6 +101,8 @@ export function Canvas() {
 
   const handleTouchMove = useCallback(
     (e: TouchEvent) => {
+      // Only handle canvas panning if we started panning on the background
+      // Model card touch events will handle themselves
       if (e.touches.length === 1 && isPanning) {
         e.preventDefault()
         const touch = e.touches[0]
@@ -163,6 +165,7 @@ export function Canvas() {
           backgroundImage: `radial-gradient(circle, var(--border) 1px, transparent 1px)`,
           backgroundSize: `${20 * state.canvasScale}px ${20 * state.canvasScale}px`,
           backgroundPosition: `${state.canvasOffset.x * state.canvasScale}px ${state.canvasOffset.y * state.canvasScale}px`,
+          touchAction: 'none',
         }}
         onMouseDown={handleBackgroundMouseDown}
         onTouchStart={handleBackgroundTouchStart}
