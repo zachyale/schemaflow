@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useSchema, generateId, getActiveView } from '@/lib/schema-store'
 import { RELATIONSHIP_TYPES } from '@/lib/schema-types'
 import type { RelationshipType, Relationship } from '@/lib/schema-types'
@@ -25,9 +25,16 @@ import {
 interface AddRelationshipDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  initialFromModelId?: string | null
+  lockFromModel?: boolean
 }
 
-export function AddRelationshipDialog({ open, onOpenChange }: AddRelationshipDialogProps) {
+export function AddRelationshipDialog({
+  open,
+  onOpenChange,
+  initialFromModelId = null,
+  lockFromModel = false,
+}: AddRelationshipDialogProps) {
   const { state, dispatch } = useSchema()
   const activeView = getActiveView(state)
   const [fromModelId, setFromModelId] = useState('')
@@ -48,6 +55,25 @@ export function AddRelationshipDialog({ open, onOpenChange }: AddRelationshipDia
     toModelId &&
     toFieldId &&
     (fromModelId !== toModelId || fromFieldId !== toFieldId)
+
+  useEffect(() => {
+    if (!open) return
+
+    setToModelId('')
+    setToFieldId('')
+    setType('many-to-one')
+
+    if (initialFromModelId && activeView.schema.models.some((m) => m.id === initialFromModelId)) {
+      setFromModelId(initialFromModelId)
+      const model = activeView.schema.models.find((m) => m.id === initialFromModelId)
+      const defaultField = model?.fields.find((f) => f.primaryKey) ?? model?.fields[0]
+      setFromFieldId(defaultField?.id ?? '')
+      return
+    }
+
+    setFromModelId('')
+    setFromFieldId('')
+  }, [open, initialFromModelId, activeView.schema.models])
 
   const handleCreate = () => {
     if (!canCreate) return
@@ -103,7 +129,14 @@ export function AddRelationshipDialog({ open, onOpenChange }: AddRelationshipDia
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>From Model</Label>
-              <Select value={fromModelId} onValueChange={(v) => { setFromModelId(v); setFromFieldId(''); }}>
+              <Select
+                value={fromModelId}
+                onValueChange={(v) => {
+                  setFromModelId(v)
+                  setFromFieldId('')
+                }}
+                disabled={lockFromModel}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select model" />
                 </SelectTrigger>

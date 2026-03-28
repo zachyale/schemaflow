@@ -83,6 +83,7 @@ function fromCompactView(compact: CompactView): { name: string; schema: Schema }
 export function SchemaEditor() {
   const [state, dispatch] = useReducer(schemaReducer, initialState)
   const [addRelOpen, setAddRelOpen] = useState(false)
+  const [addRelFromModelId, setAddRelFromModelId] = useState<string | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const searchParams = useSearchParams()
@@ -267,7 +268,10 @@ export function SchemaEditor() {
     <SchemaContext.Provider value={{ state, dispatch }}>
       <div className="flex flex-col h-screen bg-background">
         <Toolbar 
-          onAddRelationship={() => setAddRelOpen(true)}
+          onAddRelationship={() => {
+            setAddRelFromModelId(null)
+            setAddRelOpen(true)
+          }}
           onShare={() => setShareOpen(true)}
         />
         
@@ -276,10 +280,25 @@ export function SchemaEditor() {
         <div className="flex flex-1 overflow-hidden">
           <ModelSidebar />
           <Canvas />
-          <InspectorPanel />
+          <InspectorPanel
+            onAddRelationshipFromModel={(modelId) => {
+              setAddRelFromModelId(modelId)
+              setAddRelOpen(true)
+            }}
+          />
         </div>
 
-        <AddRelationshipDialog open={addRelOpen} onOpenChange={setAddRelOpen} />
+        <AddRelationshipDialog
+          open={addRelOpen}
+          onOpenChange={(open) => {
+            setAddRelOpen(open)
+            if (!open) {
+              setAddRelFromModelId(null)
+            }
+          }}
+          initialFromModelId={addRelFromModelId}
+          lockFromModel={Boolean(addRelFromModelId)}
+        />
         <ShareDialog open={shareOpen} onOpenChange={setShareOpen} />
       </div>
     </SchemaContext.Provider>

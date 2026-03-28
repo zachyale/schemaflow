@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, Settings2, Trash2 } from 'lucide-react'
-import { useSchema, getActiveView } from '@/lib/schema-store'
+import { ChevronLeft, ChevronRight, Plus, Settings2, Trash2 } from 'lucide-react'
+import { useSchema, getActiveView, generateId } from '@/lib/schema-store'
 import { FIELD_TYPES } from '@/lib/schema-types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,7 +15,11 @@ type InspectorNode =
   | { type: 'model'; modelId: string }
   | { type: 'field'; modelId: string; fieldId: string }
 
-export function InspectorPanel() {
+interface InspectorPanelProps {
+  onAddRelationshipFromModel?: (modelId: string) => void
+}
+
+export function InspectorPanel({ onAddRelationshipFromModel }: InspectorPanelProps) {
   const { state, dispatch } = useSchema()
   const activeView = getActiveView(state)
   const [stack, setStack] = useState<InspectorNode[]>([])
@@ -127,7 +131,7 @@ export function InspectorPanel() {
                 {currentModel.fields.map((field) => (
                   <button
                     key={field.id}
-                    className="flex w-full items-center justify-between rounded bg-secondary/50 px-2 py-1 text-sm text-left hover:bg-secondary"
+                    className="group flex w-full items-center gap-2 rounded-md border border-border/70 bg-secondary/30 px-2.5 py-1.5 text-sm text-left transition-colors hover:border-border hover:bg-secondary/60"
                     onClick={() => {
                       dispatch({
                         type: 'SET_SELECTION',
@@ -135,10 +139,33 @@ export function InspectorPanel() {
                       })
                     }}
                   >
-                    <span>{field.name}</span>
+                    <span className="flex-1 font-medium">{field.name}</span>
                     <span className="text-xs text-muted-foreground">{field.type}</span>
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                   </button>
                 ))}
+                <button
+                  className="flex w-full items-center gap-2 rounded-md border border-dashed border-border/80 bg-background px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:border-border hover:bg-secondary/40 hover:text-foreground"
+                  onClick={() => {
+                    const fieldId = generateId('field')
+                    dispatch({
+                      type: 'ADD_FIELD',
+                      modelId: currentModel.id,
+                      field: {
+                        id: fieldId,
+                        name: 'newField',
+                        type: 'string',
+                      },
+                    })
+                    dispatch({
+                      type: 'SET_SELECTION',
+                      selection: { type: 'field', modelId: currentModel.id, fieldId },
+                    })
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span className="font-medium">Add Field</span>
+                </button>
               </div>
             </div>
 
@@ -155,7 +182,7 @@ export function InspectorPanel() {
                   {relatedTableLinks.map((item) => (
                     <button
                       key={item.id}
-                      className="flex w-full flex-col rounded bg-secondary/50 px-2 py-1.5 text-left hover:bg-secondary"
+                      className="group flex w-full items-start gap-2 rounded-md border border-border/70 bg-secondary/30 px-2.5 py-1.5 text-left transition-colors hover:border-border hover:bg-secondary/60"
                       onClick={() => {
                         const relatedModel = activeView.schema.models.find((m) => m.id === item.relatedModelId)
                         const hasField = relatedModel?.fields.some((f) => f.id === item.relatedFieldId)
@@ -176,14 +203,24 @@ export function InspectorPanel() {
                         }
                       }}
                     >
-                      <span className="text-sm font-medium">{item.label}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {item.direction === 'outgoing' ? 'references' : 'referenced by'}: {item.relationLabel}
-                      </span>
+                      <div className="flex-1">
+                        <span className="block text-sm font-medium">{item.label}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {item.direction === 'outgoing' ? 'references' : 'referenced by'}: {item.relationLabel}
+                        </span>
+                      </div>
+                      <ChevronRight className="mt-0.5 h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                     </button>
                   ))}
                 </div>
               )}
+              <button
+                className="mt-1 flex w-full items-center gap-2 rounded-md border border-dashed border-border/80 bg-background px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:border-border hover:bg-secondary/40 hover:text-foreground"
+                onClick={() => onAddRelationshipFromModel?.(currentModel.id)}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span className="font-medium">Add Relationship</span>
+              </button>
             </div>
 
             <Separator />
