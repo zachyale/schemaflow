@@ -314,6 +314,7 @@ export function Canvas({ onModelDragStateChange }: CanvasProps) {
   }, [visibleModels])
 
   const isDefaultZoom = Math.abs(activeView.canvasScale - 1) < 0.001
+  const zoomChipClass = 'rounded bg-secondary px-2 py-1 text-xs leading-none text-muted-foreground'
 
   const handleResetZoom = useCallback(() => {
     scheduleCanvasView(offsetRef.current, 1, true)
@@ -374,16 +375,16 @@ export function Canvas({ onModelDragStateChange }: CanvasProps) {
       <div className="absolute bottom-4 right-4 flex items-center gap-2">
         {!isDefaultZoom ? (
           <button
-            className="rounded bg-secondary px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground"
+            className={`${zoomChipClass} transition-colors hover:bg-secondary/80 hover:text-foreground`}
             onClick={handleResetZoom}
           >
-            <span className="inline-flex items-center gap-1">
+            <span className="inline-flex items-center gap-1 leading-none">
               <RotateCcw className="h-3 w-3" />
-              Reset
+              <span className="leading-none">Reset</span>
             </span>
           </button>
         ) : null}
-        <div className="rounded bg-secondary px-2 py-1 text-xs text-muted-foreground pointer-events-none">
+        <div className={`${zoomChipClass} pointer-events-none`}>
           {Math.round(activeView.canvasScale * 100)}%
         </div>
       </div>
