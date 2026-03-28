@@ -81,8 +81,7 @@ export function Toolbar({ onAddRelationship, onShare }: ToolbarProps) {
   }
 
   const handleResetZoom = () => {
-    dispatch({ type: 'SET_CANVAS_OFFSET', offset: { x: 0, y: 0 } })
-    dispatch({ type: 'SET_CANVAS_SCALE', scale: 1 })
+    dispatch({ type: 'SET_CANVAS_VIEW', offset: { x: 0, y: 0 }, scale: 1 })
   }
 
   const handleResetSession = () => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import { ChevronDown, ChevronRight, GripVertical, Key, Link, Plus, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSchema, generateId, getActiveView } from '@/lib/schema-store'
@@ -17,6 +17,10 @@ export function ModelCard({ model }: ModelCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
   const isDraggingRef = useRef(false)
   const dragOffsetRef = useRef({ x: 0, y: 0 })
+  const scaleRef = useRef(activeView.canvasScale)
+  const offsetRef = useRef(activeView.canvasOffset)
+  const rafIdRef = useRef<number | null>(null)
+  const pendingPositionRef = useRef<{ x: number; y: number } | null>(null)
   const draggedFieldIdRef = useRef<string | null>(null)
   const fieldDragOverIdRef = useRef<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -34,6 +38,39 @@ export function ModelCard({ model }: ModelCardProps) {
     fieldDragOverIdRef.current = value
     setFieldDragOverId(value)
   }, [])
+
+  useEffect(() => {
+    scaleRef.current = activeView.canvasScale
+    offsetRef.current = activeView.canvasOffset
+  }, [activeView.canvasScale, activeView.canvasOffset])
+
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+      }
+    }
+  }, [])
+
+  const scheduleMoveModel = useCallback(
+    (position: { x: number; y: number }) => {
+      pendingPositionRef.current = position
+      if (rafIdRef.current !== null) return
+
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null
+        if (!pendingPositionRef.current) return
+        const nextPosition = pendingPositionRef.current
+        pendingPositionRef.current = null
+        dispatch({
+          type: 'MOVE_MODEL',
+          modelId: model.id,
+          position: nextPosition,
+        })
+      })
+    },
+    [dispatch, model.id]
+  )
 
   const reorderFields = useCallback(
     (sourceFieldId: string, targetFieldId: string) => {
@@ -57,8 +94,7 @@ export function ModelCard({ model }: ModelCardProps) {
       const canvas = cardRef.current?.closest('[data-canvas]')
       if (!rect || !canvas) return
 
-      const canvasRect = canvas.getBoundingClientRect()
-      const scale = activeView.canvasScale
+      const scale = scaleRef.current
 
       isDraggingRef.current = true
       setIsDragging(true)
@@ -69,7 +105,7 @@ export function ModelCard({ model }: ModelCardProps) {
 
       dispatch({ type: 'SET_SELECTION', selection: { type: 'model', modelId: model.id } })
     },
-    [dispatch, model.id, activeView.canvasScale]
+    [dispatch, model.id]
   )
 
   const handleMouseDown = useCallback(
@@ -92,17 +128,14 @@ export function ModelCard({ model }: ModelCardProps) {
       if (!canvas) return
 
       const canvasRect = canvas.getBoundingClientRect()
-      const scale = activeView.canvasScale
-      const newX = (clientX - canvasRect.left) / scale - dragOffsetRef.current.x - activeView.canvasOffset.x
-      const newY = (clientY - canvasRect.top) / scale - dragOffsetRef.current.y - activeView.canvasOffset.y
+      const scale = scaleRef.current
+      const currentOffset = offsetRef.current
+      const newX = (clientX - canvasRect.left) / scale - dragOffsetRef.current.x - currentOffset.x
+      const newY = (clientY - canvasRect.top) / scale - dragOffsetRef.current.y - currentOffset.y
 
-      dispatch({
-        type: 'MOVE_MODEL',
-        modelId: model.id,
-        position: { x: Math.max(0, newX), y: Math.max(0, newY) },
-      })
+      scheduleMoveModel({ x: Math.max(0, newX), y: Math.max(0, newY) })
     },
-    [activeView.canvasScale, activeView.canvasOffset, dispatch, model.id]
+    [scheduleMoveModel]
   )
 
   const handleMouseMove = useCallback(
@@ -115,7 +148,19 @@ export function ModelCard({ model }: ModelCardProps) {
   const handleDragEnd = useCallback(() => {
     isDraggingRef.current = false
     setIsDragging(false)
-  }, [])
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current)
+      rafIdRef.current = null
+    }
+    if (pendingPositionRef.current) {
+      dispatch({
+        type: 'MOVE_MODEL',
+        modelId: model.id,
+        position: pendingPositionRef.current,
+      })
+      pendingPositionRef.current = null
+    }
+  }, [dispatch, model.id])
 
   // Attach global listeners when dragging
   const handleMouseDownWrapper = useCallback(
@@ -149,7 +194,7 @@ export function ModelCard({ model }: ModelCardProps) {
       const canvas = cardRef.current?.closest('[data-canvas]')
       if (!rect || !canvas) return
 
-      const scale = activeView.canvasScale
+      const scale = scaleRef.current
       
       // Store the initial offset from touch point to card corner
       const initialOffsetX = (touch.clientX - rect.left) / scale
@@ -167,17 +212,14 @@ export function ModelCard({ model }: ModelCardProps) {
           
           const moveTouch = moveEvent.touches[0]
           const canvasRect = canvas.getBoundingClientRect()
-          const currentScale = activeView.canvasScale
+          const currentScale = scaleRef.current
+          const currentOffset = offsetRef.current
           
           // Use the stored initial offset, not recalculated
-          const newX = (moveTouch.clientX - canvasRect.left) / currentScale - initialOffsetX - activeView.canvasOffset.x
-          const newY = (moveTouch.clientY - canvasRect.top) / currentScale - initialOffsetY - activeView.canvasOffset.y
+          const newX = (moveTouch.clientX - canvasRect.left) / currentScale - initialOffsetX - currentOffset.x
+          const newY = (moveTouch.clientY - canvasRect.top) / currentScale - initialOffsetY - currentOffset.y
 
-          dispatch({
-            type: 'MOVE_MODEL',
-            modelId: model.id,
-            position: { x: Math.max(0, newX), y: Math.max(0, newY) },
-          })
+          scheduleMoveModel({ x: Math.max(0, newX), y: Math.max(0, newY) })
         }
       }
       
@@ -193,7 +235,7 @@ export function ModelCard({ model }: ModelCardProps) {
       window.addEventListener('touchend', handleEnd)
       window.addEventListener('touchcancel', handleEnd)
     },
-    [activeView.canvasScale, activeView.canvasOffset, dispatch, model.id]
+    [dispatch, model.id, scheduleMoveModel]
   )
 
   const handleAddField = () => {

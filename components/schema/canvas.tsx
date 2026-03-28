@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useCallback, useEffect } from 'react'
+import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import { useSchema, getActiveView } from '@/lib/schema-store'
 import { ModelCard } from './model-card'
 import { RelationshipLines } from './relationship-lines'
@@ -13,38 +13,107 @@ export function Canvas() {
   const activeView = getActiveView(state)
   const canvasRef = useRef<HTMLDivElement>(null)
   const backgroundRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const scaleRef = useRef(activeView.canvasScale)
+  const offsetRef = useRef(activeView.canvasOffset)
+  const isPanningRef = useRef(false)
+  const panStartRef = useRef({ x: 0, y: 0 })
+  const lastPinchDistanceRef = useRef<number | null>(null)
+  const commitTimerRef = useRef<number | null>(null)
   const [isPanning, setIsPanning] = useState(false)
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 })
-  const [lastPinchDistance, setLastPinchDistance] = useState<number | null>(null)
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 })
 
   const clampScale = useCallback((scale: number) => {
     return Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale))
   }, [])
 
+  useEffect(() => {
+    scaleRef.current = activeView.canvasScale
+    offsetRef.current = activeView.canvasOffset
+    if (contentRef.current) {
+      contentRef.current.style.transform = `scale(${activeView.canvasScale}) translate(${activeView.canvasOffset.x}px, ${activeView.canvasOffset.y}px)`
+    }
+    if (backgroundRef.current) {
+      backgroundRef.current.style.backgroundPosition = `${activeView.canvasOffset.x * activeView.canvasScale}px ${activeView.canvasOffset.y * activeView.canvasScale}px`
+    }
+  }, [activeView.canvasScale, activeView.canvasOffset])
+
+  const applyViewToDom = useCallback((offset: { x: number; y: number }, scale: number) => {
+    if (contentRef.current) {
+      contentRef.current.style.transform = `scale(${scale}) translate(${offset.x}px, ${offset.y}px)`
+    }
+    if (backgroundRef.current) {
+      backgroundRef.current.style.backgroundPosition = `${offset.x * scale}px ${offset.y * scale}px`
+    }
+  }, [])
+
+  const commitView = useCallback(() => {
+    if (commitTimerRef.current !== null) {
+      window.clearTimeout(commitTimerRef.current)
+      commitTimerRef.current = null
+    }
+    dispatch({
+      type: 'SET_CANVAS_VIEW',
+      offset: offsetRef.current,
+      scale: scaleRef.current,
+    })
+  }, [dispatch])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const updateSize = () => {
+      setViewportSize({ width: canvas.clientWidth, height: canvas.clientHeight })
+    }
+    updateSize()
+
+    const observer = new ResizeObserver(updateSize)
+    observer.observe(canvas)
+    return () => observer.disconnect()
+  }, [])
+
+  const scheduleCanvasView = useCallback(
+    (nextOffset: { x: number; y: number }, nextScale: number, immediateCommit = false) => {
+      offsetRef.current = nextOffset
+      scaleRef.current = clampScale(nextScale)
+      applyViewToDom(offsetRef.current, scaleRef.current)
+
+      if (immediateCommit) {
+        commitView()
+        return
+      }
+
+      if (commitTimerRef.current !== null) {
+        window.clearTimeout(commitTimerRef.current)
+      }
+      commitTimerRef.current = window.setTimeout(() => {
+        commitTimerRef.current = null
+        dispatch({
+          type: 'SET_CANVAS_VIEW',
+          offset: offsetRef.current,
+          scale: scaleRef.current,
+        })
+      }, 80)
+    },
+    [applyViewToDom, clampScale, commitView, dispatch]
+  )
+
   const zoomAtPoint = useCallback(
     (nextScale: number, pointX: number, pointY: number) => {
-      const currentScale = activeView.canvasScale
+      const currentScale = scaleRef.current
       const clampedScale = clampScale(nextScale)
       if (clampedScale === currentScale) return
 
+      const currentOffset = offsetRef.current
       const nextOffsetX =
-        activeView.canvasOffset.x + pointX * (1 / clampedScale - 1 / currentScale)
+        currentOffset.x + pointX * (1 / clampedScale - 1 / currentScale)
       const nextOffsetY =
-        activeView.canvasOffset.y + pointY * (1 / clampedScale - 1 / currentScale)
+        currentOffset.y + pointY * (1 / clampedScale - 1 / currentScale)
 
-      dispatch({
-        type: 'SET_CANVAS_OFFSET',
-        offset: {
-          x: nextOffsetX,
-          y: nextOffsetY,
-        },
-      })
-      dispatch({
-        type: 'SET_CANVAS_SCALE',
-        scale: clampedScale,
-      })
+      scheduleCanvasView({ x: nextOffsetX, y: nextOffsetY }, clampedScale)
     },
-    [activeView.canvasScale, activeView.canvasOffset, clampScale, dispatch]
+    [clampScale, scheduleCanvasView]
   )
 
   const handleWheel = useCallback(
@@ -59,19 +128,21 @@ export function Canvas() {
         const pointX = e.clientX - canvasRect.left
         const pointY = e.clientY - canvasRect.top
         const delta = -e.deltaY * 0.001
-        zoomAtPoint(activeView.canvasScale + delta, pointX, pointY)
+        zoomAtPoint(scaleRef.current + delta, pointX, pointY)
       } else {
         // Pan via scroll
-        dispatch({
-          type: 'SET_CANVAS_OFFSET',
-          offset: {
-            x: activeView.canvasOffset.x - e.deltaX / activeView.canvasScale,
-            y: activeView.canvasOffset.y - e.deltaY / activeView.canvasScale,
+        const scale = scaleRef.current
+        const currentOffset = offsetRef.current
+        scheduleCanvasView(
+          {
+            x: currentOffset.x - e.deltaX / scale,
+            y: currentOffset.y - e.deltaY / scale,
           },
-        })
+          scale
+        )
       }
     },
-    [dispatch, activeView.canvasScale, activeView.canvasOffset, zoomAtPoint]
+    [zoomAtPoint, scheduleCanvasView]
   )
 
   const handleBackgroundMouseDown = useCallback(
@@ -79,8 +150,9 @@ export function Canvas() {
       // Left click on background or middle click anywhere starts panning
       if (e.button === 0 || e.button === 1) {
         e.preventDefault()
+        isPanningRef.current = true
         setIsPanning(true)
-        setPanStart({ x: e.clientX, y: e.clientY })
+        panStartRef.current = { x: e.clientX, y: e.clientY }
         dispatch({ type: 'SET_SELECTION', selection: null })
       }
     },
@@ -93,8 +165,9 @@ export function Canvas() {
       if (e.touches.length === 1) {
         // Single finger - pan
         const touch = e.touches[0]
+        isPanningRef.current = true
         setIsPanning(true)
-        setPanStart({ x: touch.clientX, y: touch.clientY })
+        panStartRef.current = { x: touch.clientX, y: touch.clientY }
         dispatch({ type: 'SET_SELECTION', selection: null })
       } else if (e.touches.length === 2) {
         // Two fingers - prepare for pinch zoom
@@ -102,7 +175,7 @@ export function Canvas() {
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
         )
-        setLastPinchDistance(distance)
+        lastPinchDistanceRef.current = distance
       }
     },
     [dispatch]
@@ -110,22 +183,25 @@ export function Canvas() {
 
   const handlePointerMove = useCallback(
     (clientX: number, clientY: number) => {
-      if (!isPanning) return
+      if (!isPanningRef.current) return
 
-      const dx = (clientX - panStart.x) / activeView.canvasScale
-      const dy = (clientY - panStart.y) / activeView.canvasScale
+      const scale = scaleRef.current
+      const currentPanStart = panStartRef.current
+      const currentOffset = offsetRef.current
+      const dx = (clientX - currentPanStart.x) / scale
+      const dy = (clientY - currentPanStart.y) / scale
 
-      dispatch({
-        type: 'SET_CANVAS_OFFSET',
-        offset: {
-          x: activeView.canvasOffset.x + dx,
-          y: activeView.canvasOffset.y + dy,
+      scheduleCanvasView(
+        {
+          x: currentOffset.x + dx,
+          y: currentOffset.y + dy,
         },
-      })
+        scale
+      )
 
-      setPanStart({ x: clientX, y: clientY })
+      panStartRef.current = { x: clientX, y: clientY }
     },
-    [isPanning, panStart, activeView.canvasScale, activeView.canvasOffset, dispatch]
+    [scheduleCanvasView]
   )
 
   const handleMouseMove = useCallback(
@@ -139,11 +215,11 @@ export function Canvas() {
     (e: TouchEvent) => {
       // Only handle canvas panning if we started panning on the background
       // Model card touch events will handle themselves
-      if (e.touches.length === 1 && isPanning) {
+      if (e.touches.length === 1 && isPanningRef.current) {
         e.preventDefault()
         const touch = e.touches[0]
         handlePointerMove(touch.clientX, touch.clientY)
-      } else if (e.touches.length === 2 && lastPinchDistance !== null) {
+      } else if (e.touches.length === 2 && lastPinchDistanceRef.current !== null) {
         e.preventDefault()
 
         const canvasRect = canvasRef.current?.getBoundingClientRect()
@@ -155,20 +231,30 @@ export function Canvas() {
         )
         const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2
         const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2
-        const delta = (distance - lastPinchDistance) * 0.005
+        const delta = (distance - lastPinchDistanceRef.current) * 0.005
         const pointX = centerX - canvasRect.left
         const pointY = centerY - canvasRect.top
 
-        zoomAtPoint(activeView.canvasScale + delta, pointX, pointY)
-        setLastPinchDistance(distance)
+        zoomAtPoint(scaleRef.current + delta, pointX, pointY)
+        lastPinchDistanceRef.current = distance
       }
     },
-    [isPanning, lastPinchDistance, handlePointerMove, zoomAtPoint, activeView.canvasScale]
+    [handlePointerMove, zoomAtPoint]
   )
 
   const handlePointerUp = useCallback(() => {
+    isPanningRef.current = false
     setIsPanning(false)
-    setLastPinchDistance(null)
+    lastPinchDistanceRef.current = null
+    commitView()
+  }, [commitView])
+
+  useEffect(() => {
+    return () => {
+      if (commitTimerRef.current !== null) {
+        window.clearTimeout(commitTimerRef.current)
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -189,6 +275,38 @@ export function Canvas() {
       window.removeEventListener('touchend', handlePointerUp)
     }
   }, [handleWheel, handleTouchMove, handleMouseMove, handlePointerUp])
+
+  const viewBounds = useMemo(() => {
+    const scale = activeView.canvasScale
+    if (scale <= 0 || viewportSize.width === 0 || viewportSize.height === 0) {
+      return null
+    }
+    const margin = 600
+    return {
+      left: -activeView.canvasOffset.x - margin / scale,
+      top: -activeView.canvasOffset.y - margin / scale,
+      right: -activeView.canvasOffset.x + viewportSize.width / scale + margin / scale,
+      bottom: -activeView.canvasOffset.y + viewportSize.height / scale + margin / scale,
+    }
+  }, [activeView.canvasOffset, activeView.canvasScale, viewportSize.width, viewportSize.height])
+
+  const visibleModels = useMemo(() => {
+    if (!viewBounds) return activeView.schema.models
+    return activeView.schema.models.filter((model) => {
+      const width = 240
+      const height = model.collapsed ? 44 : 44 + model.fields.length * 32 + 8
+      return (
+        model.position.x < viewBounds.right &&
+        model.position.x + width > viewBounds.left &&
+        model.position.y < viewBounds.bottom &&
+        model.position.y + height > viewBounds.top
+      )
+    })
+  }, [activeView.schema.models, viewBounds])
+
+  const visibleModelIds = useMemo(() => {
+    return new Set(visibleModels.map((model) => model.id))
+  }, [visibleModels])
 
   return (
     <div
@@ -215,6 +333,7 @@ export function Canvas() {
 
       {/* Canvas content container - single transform for both lines and cards */}
       <div
+        ref={contentRef}
         className="absolute inset-0 pointer-events-none"
         style={{
           transform: `scale(${activeView.canvasScale}) translate(${activeView.canvasOffset.x}px, ${activeView.canvasOffset.y}px)`,
@@ -225,12 +344,12 @@ export function Canvas() {
         <svg
           className="absolute inset-0 w-full h-full overflow-visible"
         >
-          <RelationshipLines />
+          <RelationshipLines visibleModelIds={visibleModelIds} />
         </svg>
 
         {/* Model cards layer */}
         <div className="pointer-events-auto">
-          {activeView.schema.models.map((model) => (
+          {visibleModels.map((model) => (
             <ModelCard key={model.id} model={model} />
           ))}
         </div>

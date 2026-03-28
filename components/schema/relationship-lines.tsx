@@ -1,14 +1,14 @@
 'use client'
 
+import { useMemo } from 'react'
 import { useSchema, getActiveView } from '@/lib/schema-store'
 import type { Model, Relationship } from '@/lib/schema-types'
 
-function getFieldPosition(
+function getFieldPositionFromIndex(
   model: Model,
-  fieldId: string,
+  fieldIndex: number,
   side: 'left' | 'right'
 ): { x: number; y: number } | null {
-  const fieldIndex = model.fields.findIndex((f) => f.id === fieldId)
   if (fieldIndex === -1) return null
 
   const cardWidth = 240
@@ -30,17 +30,27 @@ interface RelationshipLineProps {
   relationship: Relationship
   fromModel: Model
   toModel: Model
+  fromFieldIndex: number
+  toFieldIndex: number
+  isSelected: boolean
+  onSelect: (relationshipId: string) => void
 }
 
-function RelationshipLine({ relationship, fromModel, toModel }: RelationshipLineProps) {
-  const { state, dispatch } = useSchema()
-
+function RelationshipLine({
+  relationship,
+  fromModel,
+  toModel,
+  fromFieldIndex,
+  toFieldIndex,
+  isSelected,
+  onSelect,
+}: RelationshipLineProps) {
   // Determine which side to connect from
   const fromIsLeft = fromModel.position.x > toModel.position.x
   const toIsLeft = !fromIsLeft
 
-  const fromPos = getFieldPosition(fromModel, relationship.fromFieldId, fromIsLeft ? 'left' : 'right')
-  const toPos = getFieldPosition(toModel, relationship.toFieldId, toIsLeft ? 'left' : 'right')
+  const fromPos = getFieldPositionFromIndex(fromModel, fromFieldIndex, fromIsLeft ? 'left' : 'right')
+  const toPos = getFieldPositionFromIndex(toModel, toFieldIndex, toIsLeft ? 'left' : 'right')
 
   if (!fromPos || !toPos) return null
 
@@ -53,15 +63,9 @@ function RelationshipLine({ relationship, fromModel, toModel }: RelationshipLine
 
   const path = `M ${fromPos.x} ${fromPos.y} C ${controlX1} ${fromPos.y}, ${controlX2} ${toPos.y}, ${toPos.x} ${toPos.y}`
 
-  const isSelected =
-    state.selection?.type === 'relationship' && state.selection.relationshipId === relationship.id
-
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
-    dispatch({
-      type: 'SET_SELECTION',
-      selection: { type: 'relationship', relationshipId: relationship.id },
-    })
+    onSelect(relationship.id)
   }
 
   // Relationship type indicators
@@ -129,17 +133,63 @@ function RelationshipLine({ relationship, fromModel, toModel }: RelationshipLine
   )
 }
 
-export function RelationshipLines() {
-  const { state } = useSchema()
+interface RelationshipLinesProps {
+  visibleModelIds?: Set<string>
+}
+
+export function RelationshipLines({ visibleModelIds }: RelationshipLinesProps) {
+  const { state, dispatch } = useSchema()
   const activeView = getActiveView(state)
+  const selectedRelationshipId =
+    state.selection?.type === 'relationship' ? state.selection.relationshipId : null
+
+  const { modelById, fieldIndexByModelId } = useMemo(() => {
+    const models = activeView.schema.models
+    const byId = new Map<string, Model>()
+    const fieldIndexes = new Map<string, Map<string, number>>()
+
+    for (const model of models) {
+      byId.set(model.id, model)
+      fieldIndexes.set(
+        model.id,
+        new Map(model.fields.map((field, index) => [field.id, index]))
+      )
+    }
+
+    return {
+      modelById: byId,
+      fieldIndexByModelId: fieldIndexes,
+    }
+  }, [activeView.schema.models])
+
+  const handleSelect = (relationshipId: string) => {
+    dispatch({
+      type: 'SET_SELECTION',
+      selection: { type: 'relationship', relationshipId },
+    })
+  }
 
   return (
     <>
       {activeView.schema.relationships.map((relationship) => {
-        const fromModel = activeView.schema.models.find((m) => m.id === relationship.fromModelId)
-        const toModel = activeView.schema.models.find((m) => m.id === relationship.toModelId)
+        if (
+          visibleModelIds &&
+          !visibleModelIds.has(relationship.fromModelId) &&
+          !visibleModelIds.has(relationship.toModelId)
+        ) {
+          return null
+        }
+
+        const fromModel = modelById.get(relationship.fromModelId)
+        const toModel = modelById.get(relationship.toModelId)
 
         if (!fromModel || !toModel) return null
+
+        const fromFieldIndex =
+          fieldIndexByModelId.get(fromModel.id)?.get(relationship.fromFieldId) ?? -1
+        const toFieldIndex =
+          fieldIndexByModelId.get(toModel.id)?.get(relationship.toFieldId) ?? -1
+        if (fromFieldIndex === -1 || toFieldIndex === -1) return null
 
         return (
           <RelationshipLine
@@ -147,6 +197,10 @@ export function RelationshipLines() {
             relationship={relationship}
             fromModel={fromModel}
             toModel={toModel}
+            fromFieldIndex={fromFieldIndex}
+            toFieldIndex={toFieldIndex}
+            isSelected={selectedRelationshipId === relationship.id}
+            onSelect={handleSelect}
           />
         )
       })}

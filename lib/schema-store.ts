@@ -28,6 +28,7 @@ export type SchemaAction =
   | { type: 'SET_SELECTION'; selection: Selection }
   | { type: 'SET_CANVAS_OFFSET'; offset: Position }
   | { type: 'SET_CANVAS_SCALE'; scale: number }
+  | { type: 'SET_CANVAS_VIEW'; offset: Position; scale: number }
   | { type: 'ADD_MODEL'; model: Model }
   | { type: 'UPDATE_MODEL'; modelId: string; updates: Partial<Omit<Model, 'id' | 'fields'>> }
   | { type: 'DELETE_MODEL'; modelId: string }
@@ -89,6 +90,13 @@ export function schemaReducer(state: SchemaState, action: SchemaAction): SchemaS
 
     case 'SET_CANVAS_SCALE':
       return updateActiveView(state, v => ({ ...v, canvasScale: Math.max(0.25, Math.min(2, action.scale)) }))
+
+    case 'SET_CANVAS_VIEW':
+      return updateActiveView(state, v => ({
+        ...v,
+        canvasOffset: action.offset,
+        canvasScale: Math.max(0.25, Math.min(2, action.scale)),
+      }))
 
     case 'ADD_MODEL':
       return updateActiveView(state, v => ({
