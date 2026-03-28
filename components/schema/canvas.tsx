@@ -5,6 +5,9 @@ import { useSchema, getActiveView } from '@/lib/schema-store'
 import { ModelCard } from './model-card'
 import { RelationshipLines } from './relationship-lines'
 
+const MIN_SCALE = 0.25
+const MAX_SCALE = 2
+
 export function Canvas() {
   const { state, dispatch } = useSchema()
   const activeView = getActiveView(state)
@@ -14,17 +17,49 @@ export function Canvas() {
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
   const [lastPinchDistance, setLastPinchDistance] = useState<number | null>(null)
 
+  const clampScale = useCallback((scale: number) => {
+    return Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale))
+  }, [])
+
+  const zoomAtPoint = useCallback(
+    (nextScale: number, pointX: number, pointY: number) => {
+      const currentScale = activeView.canvasScale
+      const clampedScale = clampScale(nextScale)
+      if (clampedScale === currentScale) return
+
+      const nextOffsetX =
+        activeView.canvasOffset.x + pointX * (1 / clampedScale - 1 / currentScale)
+      const nextOffsetY =
+        activeView.canvasOffset.y + pointY * (1 / clampedScale - 1 / currentScale)
+
+      dispatch({
+        type: 'SET_CANVAS_OFFSET',
+        offset: {
+          x: nextOffsetX,
+          y: nextOffsetY,
+        },
+      })
+      dispatch({
+        type: 'SET_CANVAS_SCALE',
+        scale: clampedScale,
+      })
+    },
+    [activeView.canvasScale, activeView.canvasOffset, clampScale, dispatch]
+  )
+
   const handleWheel = useCallback(
     (e: WheelEvent) => {
       e.preventDefault()
 
       if (e.ctrlKey || e.metaKey) {
-        // Zoom
+        // Zoom around cursor position so focal point stays fixed.
+        const canvasRect = canvasRef.current?.getBoundingClientRect()
+        if (!canvasRect) return
+
+        const pointX = e.clientX - canvasRect.left
+        const pointY = e.clientY - canvasRect.top
         const delta = -e.deltaY * 0.001
-        dispatch({
-          type: 'SET_CANVAS_SCALE',
-          scale: activeView.canvasScale + delta,
-        })
+        zoomAtPoint(activeView.canvasScale + delta, pointX, pointY)
       } else {
         // Pan via scroll
         dispatch({
@@ -110,19 +145,25 @@ export function Canvas() {
         handlePointerMove(touch.clientX, touch.clientY)
       } else if (e.touches.length === 2 && lastPinchDistance !== null) {
         e.preventDefault()
+
+        const canvasRect = canvasRef.current?.getBoundingClientRect()
+        if (!canvasRect) return
+
         const distance = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
         )
+        const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2
+        const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2
         const delta = (distance - lastPinchDistance) * 0.005
-        dispatch({
-          type: 'SET_CANVAS_SCALE',
-          scale: activeView.canvasScale + delta,
-        })
+        const pointX = centerX - canvasRect.left
+        const pointY = centerY - canvasRect.top
+
+        zoomAtPoint(activeView.canvasScale + delta, pointX, pointY)
         setLastPinchDistance(distance)
       }
     },
-    [isPanning, lastPinchDistance, handlePointerMove, dispatch, activeView.canvasScale]
+    [isPanning, lastPinchDistance, handlePointerMove, zoomAtPoint, activeView.canvasScale]
   )
 
   const handlePointerUp = useCallback(() => {
