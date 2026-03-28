@@ -88,11 +88,40 @@ export function SchemaEditor() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const buildStateFromImportedViews = (views: Array<{ name: string; schema: Schema }>): SchemaState => {
+  const resetSchemaLayout = (schema: Schema): Schema => {
+    const spacingX = 350
+    const spacingY = 280
+    const startX = 100
+    const startY = 100
+    const columns = 4
+
+    return {
+      ...schema,
+      models: schema.models.map((model, index) => {
+        const col = index % columns
+        const row = Math.floor(index / columns)
+        return {
+          ...model,
+          position: {
+            x: startX + col * spacingX,
+            y: startY + row * spacingY,
+          },
+        }
+      }),
+    }
+  }
+
+  const buildStateFromImportedViews = (
+    views: Array<{ name: string; schema: Schema }>,
+    options?: { resetLayout?: boolean }
+  ): SchemaState => {
+    const resetLayout = options?.resetLayout ?? false
     const mappedViews: SchemaView[] = views.map((viewData, index) => ({
       id: generateId('view'),
       name: viewData.name || `Imported ${index + 1}`,
-      schema: JSON.parse(JSON.stringify(viewData.schema)) as Schema,
+      schema: resetLayout
+        ? resetSchemaLayout(JSON.parse(JSON.stringify(viewData.schema)) as Schema)
+        : (JSON.parse(JSON.stringify(viewData.schema)) as Schema),
       canvasOffset: { x: 0, y: 0 },
       canvasScale: 1,
     }))
@@ -147,7 +176,10 @@ export function SchemaEditor() {
             if (sampleViews.length > 0) {
               if (!cancelled) {
                 dispatch({ type: 'RESET_SESSION' })
-                dispatch({ type: 'LOAD_STATE', state: buildStateFromImportedViews(sampleViews) })
+                dispatch({
+                  type: 'LOAD_STATE',
+                  state: buildStateFromImportedViews(sampleViews, { resetLayout: true }),
+                })
                 router.replace('/', { scroll: false })
                 setMounted(true)
               }
