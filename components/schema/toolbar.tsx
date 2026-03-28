@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, Link2, PanelRight, Plus, RotateCcw, Share2, Upload } from 'lucide-react'
+import { Link2, PanelRight, Plus, RotateCcw, Share2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSchema, generateId, validateSchema, getActiveView } from '@/lib/schema-store'
 import type { Model } from '@/lib/schema-types'
@@ -27,7 +27,6 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
   const { state, dispatch } = useSchema()
   const activeView = getActiveView(state)
   const [importOpen, setImportOpen] = useState(false)
-  const [exportOpen, setExportOpen] = useState(false)
   const [importJson, setImportJson] = useState('')
   const [importError, setImportError] = useState('')
 
@@ -75,25 +74,6 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
     }
   }
 
-  const handleExport = () => {
-    setExportOpen(true)
-  }
-
-  const handleDownload = () => {
-    const json = JSON.stringify(activeView.schema, null, 2)
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'schema.json'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const handleCopyToClipboard = () => {
-    navigator.clipboard.writeText(JSON.stringify(activeView.schema, null, 2))
-  }
-
   return (
     <>
       <div className="flex items-center gap-2 border-b bg-card px-4 py-2">
@@ -109,11 +89,6 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
         <Button variant="ghost" size="sm" onClick={() => setImportOpen(true)}>
           <Upload className="h-4 w-4 mr-1.5" />
           Import
-        </Button>
-
-        <Button variant="ghost" size="sm" onClick={handleExport}>
-          <Download className="h-4 w-4 mr-1.5" />
-          Export
         </Button>
 
         <Button variant="ghost" size="sm" onClick={onShare}>
@@ -177,29 +152,6 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
               Cancel
             </Button>
             <Button onClick={handleImport}>Import</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Export Dialog */}
-      <Dialog open={exportOpen} onOpenChange={setExportOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Export Schema</DialogTitle>
-            <DialogDescription>
-              Copy or download your schema as JSON.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            value={JSON.stringify(activeView.schema, null, 2)}
-            readOnly
-            className="h-80 font-mono text-sm"
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCopyToClipboard}>
-              Copy to Clipboard
-            </Button>
-            <Button onClick={handleDownload}>Download</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

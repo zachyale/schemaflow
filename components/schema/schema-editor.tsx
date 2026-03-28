@@ -22,7 +22,7 @@ export function SchemaEditor() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  // Load session on mount and handle shared URL import
+  // Load session on mount and handle shared URL import from lz-string compressed data
   useEffect(() => {
     // First load saved session
     const savedState = loadSession()

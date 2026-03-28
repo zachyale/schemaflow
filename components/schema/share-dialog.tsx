@@ -1,22 +1,22 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Copy, Check, AlertTriangle } from 'lucide-react'
+import { Copy, Check, AlertTriangle, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { useSchema } from '@/lib/schema-store'
+import { Textarea } from '@/components/ui/textarea'
+import { useSchema, getActiveView } from '@/lib/schema-store'
 import { compressToEncodedURIComponent } from 'lz-string'
-import type { SchemaView } from '@/lib/schema-types'
 
 interface ShareDialogProps {
   open: boolean
@@ -28,14 +28,17 @@ const MAX_URL_LENGTH = 8000
 
 export function ShareDialog({ open, onOpenChange }: ShareDialogProps) {
   const { state } = useSchema()
+  const activeView = getActiveView(state)
   const [selectedViewIds, setSelectedViewIds] = useState<Set<string>>(new Set())
   const [copied, setCopied] = useState(false)
+  const [tab, setTab] = useState<string>('link')
 
   // Select all views by default when dialog opens
   useEffect(() => {
     if (open) {
       setSelectedViewIds(new Set(state.views.map(v => v.id)))
       setCopied(false)
+      setTab('link')
     }
   }, [open, state.views])
 
@@ -60,11 +63,11 @@ export function ShareDialog({ open, onOpenChange }: ShareDialogProps) {
       }))
     
     if (selectedViews.length === 0) {
-      return { url: '', length: 0, isValid: false }
+      return { url: '', length: 0, isValid: false, json: '[]' }
     }
 
-    const json = JSON.stringify(selectedViews)
-    const compressed = compressToEncodedURIComponent(json)
+    const json = JSON.stringify(selectedViews, null, 2)
+    const compressed = compressToEncodedURIComponent(JSON.stringify(selectedViews))
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
     const url = `${baseUrl}?share=${compressed}`
 
@@ -73,10 +76,11 @@ export function ShareDialog({ open, onOpenChange }: ShareDialogProps) {
       length: url.length,
       isValid: url.length <= MAX_URL_LENGTH,
       isWarning: url.length > MAX_SAFE_URL_LENGTH,
+      json,
     }
   }, [state.views, selectedViewIds])
 
-  const handleCopy = async () => {
+  const handleCopyLink = async () => {
     if (shareData.url) {
       await navigator.clipboard.writeText(shareData.url)
       setCopied(true)
@@ -85,116 +89,191 @@ export function ShareDialog({ open, onOpenChange }: ShareDialogProps) {
   }
 
   const handleCopyJson = async () => {
-    const selectedViews = state.views
-      .filter(v => selectedViewIds.has(v.id))
-      .map(v => ({
-        name: v.name,
-        schema: v.schema,
-      }))
-    await navigator.clipboard.writeText(JSON.stringify(selectedViews, null, 2))
+    await navigator.clipboard.writeText(shareData.json)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleDownload = () => {
+    const blob = new Blob([shareData.json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = selectedViewIds.size === 1 
+      ? `${state.views.find(v => selectedViewIds.has(v.id))?.name || 'schema'}.json`
+      : 'schemas.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleDownloadCurrentView = () => {
+    const json = JSON.stringify(activeView.schema, null, 2)
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${activeView.name}.json`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Share Schema</DialogTitle>
+          <DialogTitle>Share & Export</DialogTitle>
           <DialogDescription>
-            Generate a shareable link that includes your selected views. Anyone with the link can import these schemas.
+            Share your schemas via link or export as JSON.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Select views to share</Label>
-            <div className="space-y-2 rounded-md border p-3">
-              {state.views.map(view => (
-                <div key={view.id} className="flex items-center gap-2">
-                  <Checkbox
-                    id={`share-view-${view.id}`}
-                    checked={selectedViewIds.has(view.id)}
-                    onCheckedChange={() => toggleView(view.id)}
-                  />
-                  <Label 
-                    htmlFor={`share-view-${view.id}`}
-                    className="text-sm font-normal cursor-pointer flex-1"
-                  >
-                    {view.name}
-                    <span className="text-muted-foreground ml-2">
-                      ({view.schema.models.length} models)
-                    </span>
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </div>
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="link">Share Link</TabsTrigger>
+            <TabsTrigger value="export">Export JSON</TabsTrigger>
+          </TabsList>
 
-          {selectedViewIds.size > 0 && (
-            <>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Share link</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={shareData.url}
-                    readOnly
-                    className="font-mono text-xs"
-                  />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleCopy}
-                    disabled={!shareData.isValid}
-                  >
-                    {copied ? (
-                      <Check className="h-4 w-4 text-primary" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  URL length: {shareData.length.toLocaleString()} characters
-                </p>
+          <TabsContent value="link" className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Select views to share</Label>
+              <div className="space-y-2 rounded-md border p-3 max-h-40 overflow-y-auto">
+                {state.views.map(view => (
+                  <div key={view.id} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`share-view-${view.id}`}
+                      checked={selectedViewIds.has(view.id)}
+                      onCheckedChange={() => toggleView(view.id)}
+                    />
+                    <Label 
+                      htmlFor={`share-view-${view.id}`}
+                      className="text-sm font-normal cursor-pointer flex-1"
+                    >
+                      {view.name}
+                      <span className="text-muted-foreground ml-2">
+                        ({view.schema.models.length} models)
+                      </span>
+                    </Label>
+                  </div>
+                ))}
               </div>
+            </div>
 
-              {shareData.isWarning && shareData.isValid && (
-                <div className="flex items-start gap-2 rounded-md border border-yellow-500/50 bg-yellow-500/10 p-3">
-                  <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5 shrink-0" />
-                  <p className="text-xs text-yellow-600 dark:text-yellow-400">
-                    This URL is long and may not work in all browsers or when shared via some apps. Consider sharing fewer views or using the JSON export for very large schemas.
+            {selectedViewIds.size > 0 && (
+              <>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Share link</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={shareData.url}
+                      readOnly
+                      className="font-mono text-xs"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleCopyLink}
+                      disabled={!shareData.isValid}
+                    >
+                      {copied && tab === 'link' ? (
+                        <Check className="h-4 w-4 text-primary" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    URL length: {shareData.length.toLocaleString()} characters
                   </p>
                 </div>
-              )}
 
-              {!shareData.isValid && (
-                <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3">
-                  <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-                  <div className="space-y-2">
-                    <p className="text-xs text-destructive">
-                      The selected schemas are too large to share via URL. Please select fewer views or use JSON export instead.
+                {shareData.isWarning && shareData.isValid && (
+                  <div className="flex items-start gap-2 rounded-md border border-yellow-500/50 bg-yellow-500/10 p-3">
+                    <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5 shrink-0" />
+                    <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                      This URL is long and may not work in all browsers. Consider using JSON export instead.
                     </p>
-                    <Button variant="outline" size="sm" onClick={handleCopyJson}>
-                      Copy as JSON
+                  </div>
+                )}
+
+                {!shareData.isValid && (
+                  <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3">
+                    <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                    <p className="text-xs text-destructive">
+                      The selected schemas are too large for URL sharing. Use JSON export instead.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </TabsContent>
+
+          <TabsContent value="export" className="space-y-4 mt-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-md border">
+                <div>
+                  <p className="text-sm font-medium">Current View</p>
+                  <p className="text-xs text-muted-foreground">
+                    Export &quot;{activeView.name}&quot; ({activeView.schema.models.length} models)
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleDownloadCurrentView}>
+                  <Download className="h-4 w-4 mr-1.5" />
+                  Download
+                </Button>
+              </div>
+
+              <div className="border-t pt-3">
+                <Label className="text-sm font-medium">Or export selected views</Label>
+                <div className="space-y-2 rounded-md border p-3 mt-2 max-h-32 overflow-y-auto">
+                  {state.views.map(view => (
+                    <div key={view.id} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`export-view-${view.id}`}
+                        checked={selectedViewIds.has(view.id)}
+                        onCheckedChange={() => toggleView(view.id)}
+                      />
+                      <Label 
+                        htmlFor={`export-view-${view.id}`}
+                        className="text-sm font-normal cursor-pointer flex-1"
+                      >
+                        {view.name}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {selectedViewIds.size > 0 && (
+                <div className="space-y-2">
+                  <Textarea
+                    value={shareData.json}
+                    readOnly
+                    className="h-40 font-mono text-xs"
+                  />
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={handleCopyJson}>
+                      {copied && tab === 'export' ? (
+                        <>
+                          <Check className="h-4 w-4 mr-1.5" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4 mr-1.5" />
+                          Copy JSON
+                        </>
+                      )}
+                    </Button>
+                    <Button className="flex-1" onClick={handleDownload}>
+                      <Download className="h-4 w-4 mr-1.5" />
+                      Download
                     </Button>
                   </div>
                 </div>
               )}
-            </>
-          )}
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
-          {shareData.isValid && selectedViewIds.size > 0 && (
-            <Button onClick={handleCopy}>
-              {copied ? 'Copied!' : 'Copy Link'}
-            </Button>
-          )}
-        </DialogFooter>
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   )
