@@ -11,6 +11,7 @@ import { AddRelationshipDialog } from './add-relationship-dialog'
 export function SchemaEditor() {
   const [state, dispatch] = useReducer(schemaReducer, initialState)
   const [addRelOpen, setAddRelOpen] = useState(false)
+  const [inspectorOpen, setInspectorOpen] = useState(true)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -20,11 +21,10 @@ export function SchemaEditor() {
   if (!mounted) {
     return (
       <div className="flex flex-col h-screen bg-background">
-        <div className="h-14 border-b bg-card" />
+        <div className="h-12 border-b bg-card" />
         <div className="flex flex-1 overflow-hidden">
           <div className="w-56 border-r bg-sidebar" />
           <div className="flex-1 bg-background" />
-          <div className="w-80 border-l bg-card" />
         </div>
       </div>
     )
@@ -33,12 +33,16 @@ export function SchemaEditor() {
   return (
     <SchemaContext.Provider value={{ state, dispatch }}>
       <div className="flex flex-col h-screen bg-background">
-        <Toolbar onAddRelationship={() => setAddRelOpen(true)} />
+        <Toolbar 
+          onAddRelationship={() => setAddRelOpen(true)} 
+          inspectorOpen={inspectorOpen}
+          onToggleInspector={() => setInspectorOpen(!inspectorOpen)}
+        />
         
         <div className="flex flex-1 overflow-hidden">
           <ModelSidebar />
           <Canvas />
-          <InspectorPanel />
+          {inspectorOpen && <InspectorPanel />}
         </div>
 
         <AddRelationshipDialog open={addRelOpen} onOpenChange={setAddRelOpen} />

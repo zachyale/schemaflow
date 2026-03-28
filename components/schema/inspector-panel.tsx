@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 
 export function InspectorPanel() {
@@ -42,7 +41,7 @@ export function InspectorPanel() {
           <span className="text-sm font-medium">Model Properties</span>
         </div>
 
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto">
           <div className="p-4 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="model-name">Name</Label>
@@ -132,7 +131,7 @@ export function InspectorPanel() {
               Delete Model
             </Button>
           </div>
-        </ScrollArea>
+        </div>
       </div>
     )
   }
@@ -149,7 +148,7 @@ export function InspectorPanel() {
           <span className="text-sm font-medium">Field Properties</span>
         </div>
 
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto">
           <div className="p-4 space-y-4">
             <div className="rounded bg-secondary/50 px-3 py-2 text-sm">
               <span className="text-muted-foreground">Model:</span>{' '}
@@ -274,7 +273,7 @@ export function InspectorPanel() {
               Delete Field
             </Button>
           </div>
-        </ScrollArea>
+        </div>
       </div>
     )
   }
@@ -297,7 +296,7 @@ export function InspectorPanel() {
           <span className="text-sm font-medium">Relationship</span>
         </div>
 
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto">
           <div className="p-4 space-y-4">
             <div className="rounded bg-secondary/50 px-3 py-2 space-y-1">
               <div className="text-sm">
@@ -351,7 +350,7 @@ export function InspectorPanel() {
               Delete Relationship
             </Button>
           </div>
-        </ScrollArea>
+        </div>
       </div>
     )
   }

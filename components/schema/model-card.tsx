@@ -9,10 +9,9 @@ import { Button } from '@/components/ui/button'
 
 interface ModelCardProps {
   model: Model
-  scale: number
 }
 
-export function ModelCard({ model, scale }: ModelCardProps) {
+export function ModelCard({ model }: ModelCardProps) {
   const { state, dispatch } = useSchema()
   const cardRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -23,7 +22,11 @@ export function ModelCard({ model, scale }: ModelCardProps) {
   const startDrag = useCallback(
     (clientX: number, clientY: number) => {
       const rect = cardRef.current?.getBoundingClientRect()
-      if (!rect) return
+      const canvas = cardRef.current?.closest('[data-canvas]')
+      if (!rect || !canvas) return
+
+      const canvasRect = canvas.getBoundingClientRect()
+      const scale = state.canvasScale
 
       setIsDragging(true)
       setDragOffset({
@@ -33,7 +36,7 @@ export function ModelCard({ model, scale }: ModelCardProps) {
 
       dispatch({ type: 'SET_SELECTION', selection: { type: 'model', modelId: model.id } })
     },
-    [dispatch, model.id, scale]
+    [dispatch, model.id, state.canvasScale]
   )
 
   const handleMouseDown = useCallback(
@@ -70,6 +73,7 @@ export function ModelCard({ model, scale }: ModelCardProps) {
       if (!canvas) return
 
       const canvasRect = canvas.getBoundingClientRect()
+      const scale = state.canvasScale
       const newX = (clientX - canvasRect.left) / scale - dragOffset.x - state.canvasOffset.x
       const newY = (clientY - canvasRect.top) / scale - dragOffset.y - state.canvasOffset.y
 
@@ -79,7 +83,7 @@ export function ModelCard({ model, scale }: ModelCardProps) {
         position: { x: Math.max(0, newX), y: Math.max(0, newY) },
       })
     },
-    [isDragging, scale, dragOffset, state.canvasOffset, dispatch, model.id]
+    [isDragging, state.canvasScale, dragOffset, state.canvasOffset, dispatch, model.id]
   )
 
   const handleMouseMove = useCallback(
@@ -183,8 +187,6 @@ export function ModelCard({ model, scale }: ModelCardProps) {
       style={{
         left: model.position.x,
         top: model.position.y,
-        transform: `scale(${scale})`,
-        transformOrigin: 'top left',
       }}
       onMouseDown={handleMouseDownWrapper}
       onTouchStart={handleTouchStartWrapper}
