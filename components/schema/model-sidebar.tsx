@@ -2,16 +2,17 @@
 
 import { Database, Table } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useSchema } from '@/lib/schema-store'
+import { useSchema, getActiveView } from '@/lib/schema-store'
 
 export function ModelSidebar() {
   const { state, dispatch } = useSchema()
+  const activeView = getActiveView(state)
 
   const handleModelClick = (modelId: string) => {
     dispatch({ type: 'SET_SELECTION', selection: { type: 'model', modelId } })
 
     // Center view on model
-    const model = state.schema.models.find((m) => m.id === modelId)
+    const model = activeView.schema.models.find((m) => m.id === modelId)
     if (model) {
       dispatch({
         type: 'SET_CANVAS_OFFSET',
@@ -29,18 +30,18 @@ export function ModelSidebar() {
         <Database className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-medium text-sidebar-foreground">Models</span>
         <span className="ml-auto text-xs text-muted-foreground">
-          {state.schema.models.length}
+          {activeView.schema.models.length}
         </span>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         <div className="p-2">
-          {state.schema.models.length === 0 ? (
+          {activeView.schema.models.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-4">
               No models yet. Click &quot;Add Model&quot; to create one.
             </p>
           ) : (
-            state.schema.models.map((model) => {
+            activeView.schema.models.map((model) => {
               const isSelected =
                 state.selection?.type === 'model' && state.selection.modelId === model.id
 
@@ -70,8 +71,8 @@ export function ModelSidebar() {
       {/* Relationships summary */}
       <div className="border-t px-4 py-3">
         <p className="text-xs text-muted-foreground">
-          {state.schema.relationships.length} relationship
-          {state.schema.relationships.length !== 1 ? 's' : ''}
+          {activeView.schema.relationships.length} relationship
+          {activeView.schema.relationships.length !== 1 ? 's' : ''}
         </p>
       </div>
     </div>

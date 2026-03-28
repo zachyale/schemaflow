@@ -36,6 +36,14 @@ export interface Schema {
   relationships: Relationship[]
 }
 
+export interface SchemaView {
+  id: string
+  name: string
+  schema: Schema
+  canvasOffset: { x: number; y: number }
+  canvasScale: number
+}
+
 export const FIELD_TYPES = [
   'uuid',
   'string',
@@ -58,6 +66,8 @@ export const RELATIONSHIP_TYPES: RelationshipType[] = [
   'many-to-one',
   'many-to-many',
 ]
+
+export const DEFAULT_VIEW_ID = 'view-default'
 
 export const DEFAULT_SCHEMA: Schema = {
   models: [
