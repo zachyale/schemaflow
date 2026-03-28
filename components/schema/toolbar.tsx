@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, Link2, PanelRight, Plus, RotateCcw, Upload } from 'lucide-react'
+import { Download, Link2, PanelRight, Plus, RotateCcw, Share2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSchema, generateId, validateSchema, getActiveView } from '@/lib/schema-store'
 import type { Model } from '@/lib/schema-types'
@@ -18,11 +18,12 @@ import { ThemeToggle } from '@/components/theme-toggle'
 
 interface ToolbarProps {
   onAddRelationship: () => void
+  onShare: () => void
   inspectorOpen: boolean
   onToggleInspector: () => void
 }
 
-export function Toolbar({ onAddRelationship, inspectorOpen, onToggleInspector }: ToolbarProps) {
+export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleInspector }: ToolbarProps) {
   const { state, dispatch } = useSchema()
   const activeView = getActiveView(state)
   const [importOpen, setImportOpen] = useState(false)
@@ -113,6 +114,11 @@ export function Toolbar({ onAddRelationship, inspectorOpen, onToggleInspector }:
         <Button variant="ghost" size="sm" onClick={handleExport}>
           <Download className="h-4 w-4 mr-1.5" />
           Export
+        </Button>
+
+        <Button variant="ghost" size="sm" onClick={onShare}>
+          <Share2 className="h-4 w-4 mr-1.5" />
+          Share
         </Button>
 
         <div className="h-4 w-px bg-border" />
