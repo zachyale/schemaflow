@@ -10,7 +10,6 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: 'Schemaflow - Visual Data Model Designer',
   description: 'Schemaflow is a visual schema editor for designing and editing database-like data models with an interactive canvas',
-  generator: 'v0.app',
   icons: {
     icon: [
       {

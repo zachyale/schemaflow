@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Plus, X, Pencil, Check, GripVertical } from 'lucide-react'
+import { Plus, X, Check, GripVertical } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSchema, generateId } from '@/lib/schema-store'
 import { Button } from '@/components/ui/button'
@@ -148,7 +148,7 @@ export function ViewTabs() {
           <GripVertical 
             className={cn(
               'h-3 w-3 cursor-grab text-muted-foreground shrink-0',
-              'opacity-0 group-hover:opacity-100 transition-opacity',
+              'opacity-60 transition-opacity',
               draggedId === view.id && 'cursor-grabbing'
             )}
             onTouchStart={() => handleTouchStart(view.id)}
@@ -178,15 +178,16 @@ export function ViewTabs() {
             </div>
           ) : (
             <>
-              <span className="max-w-32 truncate">{view.name}</span>
               <button
                 onClick={(e) => {
                   e.stopPropagation()
+                  e.preventDefault()
                   handleStartRename(view)
                 }}
-                className="p-0.5 opacity-0 group-hover:opacity-100 hover:bg-secondary rounded transition-opacity"
+                className="max-w-32 truncate rounded px-1 py-0.5 text-left hover:bg-secondary/70 transition-colors"
+                title="Rename view"
               >
-                <Pencil className="h-3 w-3" />
+                {view.name}
               </button>
               {state.views.length > 1 && (
                 <button
@@ -196,7 +197,7 @@ export function ViewTabs() {
                       dispatch({ type: 'DELETE_VIEW', viewId: view.id })
                     }
                   }}
-                  className="p-0.5 opacity-0 group-hover:opacity-100 hover:bg-destructive/20 hover:text-destructive rounded transition-opacity"
+                  className="p-0.5 opacity-60 hover:bg-destructive/20 hover:text-destructive rounded transition-colors"
                 >
                   <X className="h-3 w-3" />
                 </button>

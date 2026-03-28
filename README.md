@@ -1,35 +1,132 @@
-# schemaflow
+# Schemaflow
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+Schemaflow is a visual schema editor for designing relational data models on an interactive canvas.
 
-## Built with v0
+You can:
+- Create and arrange models visually
+- Add/edit fields and data types
+- Define relationships between fields
+- Work with multiple views (tabs)
+- Import JSON into the current view
+- Export the current view or multiple views as JSON
+- Share selected views with a compressed URL
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
+## Local Development
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_iQlF2NJPJ9BSPDjzL04sawqQCbpN)
+Requirements:
+- Node.js 20+ (recommended)
+- npm
 
-## Getting Started
+Install and run:
 
-First, run the development server:
+```bash
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+## Scripts
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+npm run build
+npm run start
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## JSON Formats
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Schemaflow currently uses two JSON shapes depending on action:
 
-## Learn More
+1. Import into current view: expects a single `Schema` object.
+2. Export/share selected views: returns an array of `{ name, schema }`.
 
-To learn more, take a look at the following resources:
+### Import JSON (single schema)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
+Use this in the Import dialog to replace the active view:
 
-<a href="https://v0.app/chat/api/kiro/clone/zachyale/schemaflow" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
+```json
+{
+  "models": [
+    {
+      "id": "user",
+      "name": "User",
+      "position": { "x": 120, "y": 80 },
+      "fields": [
+        { "id": "user-id", "name": "id", "type": "uuid", "primaryKey": true },
+        { "id": "user-email", "name": "email", "type": "string", "unique": true },
+        { "id": "user-name", "name": "name", "type": "string", "nullable": true }
+      ]
+    },
+    {
+      "id": "post",
+      "name": "Post",
+      "position": { "x": 520, "y": 80 },
+      "fields": [
+        { "id": "post-id", "name": "id", "type": "uuid", "primaryKey": true },
+        { "id": "post-title", "name": "title", "type": "string" },
+        { "id": "post-user-id", "name": "userId", "type": "uuid", "foreignKey": true }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel-post-user",
+      "fromModelId": "post",
+      "fromFieldId": "post-user-id",
+      "toModelId": "user",
+      "toFieldId": "user-id",
+      "type": "many-to-one"
+    }
+  ]
+}
+```
+
+### Export JSON (multiple views)
+
+This is the shape used when exporting selected views:
+
+```json
+[
+  {
+    "name": "Core",
+    "schema": {
+      "models": [
+        {
+          "id": "user",
+          "name": "User",
+          "position": { "x": 120, "y": 80 },
+          "fields": [
+            { "id": "user-id", "name": "id", "type": "uuid", "primaryKey": true }
+          ]
+        }
+      ],
+      "relationships": []
+    }
+  },
+  {
+    "name": "Billing",
+    "schema": {
+      "models": [
+        {
+          "id": "invoice",
+          "name": "Invoice",
+          "position": { "x": 160, "y": 120 },
+          "fields": [
+            { "id": "invoice-id", "name": "id", "type": "uuid", "primaryKey": true },
+            { "id": "invoice-user-id", "name": "userId", "type": "uuid", "foreignKey": true }
+          ]
+        }
+      ],
+      "relationships": []
+    }
+  }
+]
+```
+
+## Notes
+
+- Session state is persisted in browser storage under `schemaflow-session`.
+- Import validation expects `models` and `relationships` arrays.
+- Share links are URL-compressed and may exceed practical browser limits for large schemas.

@@ -15,8 +15,9 @@ export function ModelCard({ model }: ModelCardProps) {
   const { state, dispatch } = useSchema()
   const activeView = getActiveView(state)
   const cardRef = useRef<HTMLDivElement>(null)
+  const isDraggingRef = useRef(false)
+  const dragOffsetRef = useRef({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
 
   const isSelected = state.selection?.type === 'model' && state.selection.modelId === model.id
 
@@ -29,11 +30,12 @@ export function ModelCard({ model }: ModelCardProps) {
       const canvasRect = canvas.getBoundingClientRect()
       const scale = activeView.canvasScale
 
+      isDraggingRef.current = true
       setIsDragging(true)
-      setDragOffset({
+      dragOffsetRef.current = {
         x: (clientX - rect.left) / scale,
         y: (clientY - rect.top) / scale,
-      })
+      }
 
       dispatch({ type: 'SET_SELECTION', selection: { type: 'model', modelId: model.id } })
     },
@@ -41,27 +43,28 @@ export function ModelCard({ model }: ModelCardProps) {
   )
 
   const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if ((e.target as HTMLElement).closest('button')) return
-      if ((e.target as HTMLElement).closest('[data-field]')) return
+    (e: React.MouseEvent): boolean => {
+      if ((e.target as HTMLElement).closest('button')) return false
+      if ((e.target as HTMLElement).closest('[data-field]')) return false
 
       e.preventDefault()
       startDrag(e.clientX, e.clientY)
+      return true
     },
     [startDrag]
   )
 
   const moveDrag = useCallback(
     (clientX: number, clientY: number) => {
-      if (!isDragging) return
+      if (!isDraggingRef.current) return
 
       const canvas = cardRef.current?.closest('[data-canvas]')
       if (!canvas) return
 
       const canvasRect = canvas.getBoundingClientRect()
       const scale = activeView.canvasScale
-      const newX = (clientX - canvasRect.left) / scale - dragOffset.x - activeView.canvasOffset.x
-      const newY = (clientY - canvasRect.top) / scale - dragOffset.y - activeView.canvasOffset.y
+      const newX = (clientX - canvasRect.left) / scale - dragOffsetRef.current.x - activeView.canvasOffset.x
+      const newY = (clientY - canvasRect.top) / scale - dragOffsetRef.current.y - activeView.canvasOffset.y
 
       dispatch({
         type: 'MOVE_MODEL',
@@ -69,7 +72,7 @@ export function ModelCard({ model }: ModelCardProps) {
         position: { x: Math.max(0, newX), y: Math.max(0, newY) },
       })
     },
-    [isDragging, dragOffset, activeView.canvasScale, activeView.canvasOffset, dispatch, model.id]
+    [activeView.canvasScale, activeView.canvasOffset, dispatch, model.id]
   )
 
   const handleMouseMove = useCallback(
@@ -80,13 +83,14 @@ export function ModelCard({ model }: ModelCardProps) {
   )
 
   const handleDragEnd = useCallback(() => {
+    isDraggingRef.current = false
     setIsDragging(false)
   }, [])
 
   // Attach global listeners when dragging
   const handleMouseDownWrapper = useCallback(
     (e: React.MouseEvent) => {
-      handleMouseDown(e)
+      if (!handleMouseDown(e)) return
 
       const handleMove = (e: MouseEvent) => handleMouseMove(e)
       const handleUp = () => {
@@ -122,7 +126,8 @@ export function ModelCard({ model }: ModelCardProps) {
       const initialOffsetY = (touch.clientY - rect.top) / scale
 
       setIsDragging(true)
-      setDragOffset({ x: initialOffsetX, y: initialOffsetY })
+      isDraggingRef.current = true
+      dragOffsetRef.current = { x: initialOffsetX, y: initialOffsetY }
       dispatch({ type: 'SET_SELECTION', selection: { type: 'model', modelId: model.id } })
 
       const handleMove = (moveEvent: TouchEvent) => {
@@ -148,6 +153,7 @@ export function ModelCard({ model }: ModelCardProps) {
       
       const handleEnd = () => {
         setIsDragging(false)
+        isDraggingRef.current = false
         window.removeEventListener('touchmove', handleMove)
         window.removeEventListener('touchend', handleEnd)
         window.removeEventListener('touchcancel', handleEnd)
