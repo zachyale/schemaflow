@@ -8,6 +8,7 @@ import { RelationshipLines } from './relationship-lines'
 export function Canvas() {
   const { state, dispatch } = useSchema()
   const canvasRef = useRef<HTMLDivElement>(null)
+  const backgroundRef = useRef<HTMLDivElement>(null)
   const [isPanning, setIsPanning] = useState(false)
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
 
@@ -23,7 +24,7 @@ export function Canvas() {
           scale: state.canvasScale + delta,
         })
       } else {
-        // Pan
+        // Pan via scroll
         dispatch({
           type: 'SET_CANVAS_OFFSET',
           offset: {
@@ -36,18 +37,14 @@ export function Canvas() {
     [dispatch, state.canvasScale, state.canvasOffset]
   )
 
-  const handleMouseDown = useCallback(
+  const handleBackgroundMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      // Only pan on middle mouse or if clicking on canvas background
-      if (e.button === 1 || (e.button === 0 && e.target === canvasRef.current)) {
+      // Left click on background or middle click anywhere starts panning
+      if (e.button === 0 || e.button === 1) {
         e.preventDefault()
         setIsPanning(true)
         setPanStart({ x: e.clientX, y: e.clientY })
-
-        // Deselect if clicking on canvas background
-        if (e.target === canvasRef.current) {
-          dispatch({ type: 'SET_SELECTION', selection: null })
-        }
+        dispatch({ type: 'SET_SELECTION', selection: null })
       }
     },
     [dispatch]
@@ -98,15 +95,21 @@ export function Canvas() {
       data-canvas
       className="relative flex-1 overflow-hidden bg-background"
       style={{
-        backgroundImage: `
-          radial-gradient(circle, var(--border) 1px, transparent 1px)
-        `,
-        backgroundSize: `${20 * state.canvasScale}px ${20 * state.canvasScale}px`,
-        backgroundPosition: `${state.canvasOffset.x * state.canvasScale}px ${state.canvasOffset.y * state.canvasScale}px`,
         cursor: isPanning ? 'grabbing' : 'default',
       }}
-      onMouseDown={handleMouseDown}
     >
+      {/* Background layer for panning - this is the clickable area */}
+      <div
+        ref={backgroundRef}
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `radial-gradient(circle, var(--border) 1px, transparent 1px)`,
+          backgroundSize: `${20 * state.canvasScale}px ${20 * state.canvasScale}px`,
+          backgroundPosition: `${state.canvasOffset.x * state.canvasScale}px ${state.canvasOffset.y * state.canvasScale}px`,
+        }}
+        onMouseDown={handleBackgroundMouseDown}
+      />
+
       {/* Canvas content container */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -134,7 +137,7 @@ export function Canvas() {
       </div>
 
       {/* Zoom indicator */}
-      <div className="absolute bottom-4 right-4 rounded bg-secondary px-2 py-1 text-xs text-muted-foreground">
+      <div className="absolute bottom-4 right-4 rounded bg-secondary px-2 py-1 text-xs text-muted-foreground pointer-events-none">
         {Math.round(state.canvasScale * 100)}%
       </div>
     </div>
