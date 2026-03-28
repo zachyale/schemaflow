@@ -47,6 +47,7 @@ export type SchemaAction =
   | { type: 'DELETE_VIEW'; viewId: string }
   | { type: 'RENAME_VIEW'; viewId: string; name: string }
   | { type: 'SWITCH_VIEW'; viewId: string }
+  | { type: 'REORDER_VIEWS'; viewIds: string[] }
   | { type: 'LOAD_STATE'; state: SchemaState }
 
 const defaultView: SchemaView = {
@@ -350,6 +351,15 @@ export function schemaReducer(state: SchemaState, action: SchemaAction): SchemaS
         activeViewId: action.viewId,
         selection: null,
       }
+
+    case 'REORDER_VIEWS': {
+      const viewMap = new Map(state.views.map(v => [v.id, v]))
+      const newViews = action.viewIds.map(id => viewMap.get(id)).filter(Boolean) as SchemaView[]
+      return {
+        ...state,
+        views: newViews,
+      }
+    }
 
     default:
       return state
