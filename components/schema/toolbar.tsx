@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Link2, PanelRight, Plus, RotateCcw, Share2, Upload } from 'lucide-react'
+import { Link2, MoreHorizontal, Plus, RotateCcw, Share2, Upload, PanelRight, ZoomIn } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSchema, generateId, validateSchema, getActiveView } from '@/lib/schema-store'
 import type { Model } from '@/lib/schema-types'
@@ -13,6 +13,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { Textarea } from '@/components/ui/textarea'
 import { ThemeToggle } from '@/components/theme-toggle'
 
@@ -31,33 +44,11 @@ const SAMPLE_SCHEMA = `{
       "position": { "x": 100, "y": 100 },
       "fields": [
         { "id": "field-1", "name": "id", "type": "uuid", "primaryKey": true },
-        { "id": "field-2", "name": "email", "type": "string", "unique": true },
-        { "id": "field-3", "name": "name", "type": "string" },
-        { "id": "field-4", "name": "created_at", "type": "timestamp" }
-      ]
-    },
-    {
-      "id": "model-2",
-      "name": "Post",
-      "position": { "x": 400, "y": 100 },
-      "fields": [
-        { "id": "field-5", "name": "id", "type": "uuid", "primaryKey": true },
-        { "id": "field-6", "name": "title", "type": "string" },
-        { "id": "field-7", "name": "author_id", "type": "uuid", "foreignKey": true }
+        { "id": "field-2", "name": "email", "type": "string", "unique": true }
       ]
     }
   ],
-  "relationships": [
-    {
-      "id": "rel-1",
-      "name": "author",
-      "fromModelId": "model-2",
-      "fromFieldId": "field-7",
-      "toModelId": "model-1",
-      "toFieldId": "field-1",
-      "type": "many-to-one"
-    }
-  ]
+  "relationships": []
 }`
 
 export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleInspector }: ToolbarProps) {
@@ -90,9 +81,12 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
   }
 
   const handleResetLayout = () => {
-    if (confirm('Reset all model positions to default layout?')) {
-      dispatch({ type: 'RESET_LAYOUT' })
-    }
+    dispatch({ type: 'RESET_LAYOUT' })
+  }
+
+  const handleResetZoom = () => {
+    dispatch({ type: 'SET_CANVAS_OFFSET', offset: { x: 0, y: 0 } })
+    dispatch({ type: 'SET_CANVAS_SCALE', scale: 1 })
   }
 
   const handleImport = () => {
@@ -113,56 +107,97 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
   }
 
   return (
-    <>
-      <div className="flex items-center gap-2 border-b bg-card px-4 py-2">
-        <div className="flex items-center gap-1.5 mr-4">
+    <TooltipProvider delayDuration={400}>
+      <div className="flex items-center gap-1 border-b bg-card px-3 py-1.5">
+        {/* Logo */}
+        <div className="flex items-center gap-1.5 mr-2">
           <div className="h-6 w-6 rounded bg-primary flex items-center justify-center">
             <span className="text-xs font-bold text-primary-foreground">S</span>
           </div>
-          <span className="font-semibold text-foreground">Schemaflow</span>
+          <span className="font-semibold text-foreground hidden sm:block">Schemaflow</span>
         </div>
 
         <div className="h-4 w-px bg-border" />
 
-        <Button variant="ghost" size="sm" onClick={() => setImportOpen(true)}>
-          <Upload className="h-4 w-4 mr-1.5" />
-          Import
-        </Button>
+        {/* Primary Actions - Icon Only */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleAddModel}>
+              <Plus className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Add Model</TooltipContent>
+        </Tooltip>
 
-        <Button variant="ghost" size="sm" onClick={onShare}>
-          <Share2 className="h-4 w-4 mr-1.5" />
-          Share
-        </Button>
-
-        <div className="h-4 w-px bg-border" />
-
-        <Button variant="ghost" size="sm" onClick={handleAddModel}>
-          <Plus className="h-4 w-4 mr-1.5" />
-          Add Model
-        </Button>
-
-        <Button variant="ghost" size="sm" onClick={onAddRelationship}>
-          <Link2 className="h-4 w-4 mr-1.5" />
-          Add Relationship
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onAddRelationship}>
+              <Link2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Add Relationship</TooltipContent>
+        </Tooltip>
 
         <div className="h-4 w-px bg-border" />
 
-        <Button variant="ghost" size="sm" onClick={handleResetLayout}>
-          <RotateCcw className="h-4 w-4 mr-1.5" />
-          Reset Layout
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Import</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onShare}>
+              <Share2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Share & Export</TooltipContent>
+        </Tooltip>
+
+        {/* More Menu */}
+        <DropdownMenu>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent>More</TooltipContent>
+          </Tooltip>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={handleResetLayout}>
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset Layout
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleResetZoom}>
+              <ZoomIn className="h-4 w-4 mr-2" />
+              Reset Zoom
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <div className="flex-1" />
 
-        <Button 
-          variant={inspectorOpen ? "secondary" : "ghost"} 
-          size="sm" 
-          onClick={onToggleInspector}
-          title={inspectorOpen ? "Hide Inspector" : "Show Inspector"}
-        >
-          <PanelRight className="h-4 w-4" />
-        </Button>
+        {/* Right Side */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant={inspectorOpen ? "secondary" : "ghost"} 
+              size="icon"
+              className="h-8 w-8"
+              onClick={onToggleInspector}
+            >
+              <PanelRight className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{inspectorOpen ? "Hide Inspector" : "Show Inspector"}</TooltipContent>
+        </Tooltip>
 
         <ThemeToggle />
       </div>
@@ -175,11 +210,11 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
           setImportError('')
         }
       }}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Import Schema</DialogTitle>
             <DialogDescription>
-              Paste your JSON schema below. This will replace the current schema in the current view.
+              Paste JSON to replace the current view.
             </DialogDescription>
           </DialogHeader>
           
@@ -191,7 +226,7 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
                 className="h-auto p-0 text-xs"
                 onClick={() => setShowSample(!showSample)}
               >
-                {showSample ? 'Hide sample schema' : 'Show sample schema'}
+                {showSample ? 'Hide sample' : 'Show sample'}
               </Button>
               {showSample && (
                 <Button 
@@ -209,7 +244,7 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
             </div>
             
             {showSample && (
-              <pre className="rounded-md bg-muted p-3 text-xs font-mono overflow-auto max-h-48 border">
+              <pre className="rounded-md bg-muted p-3 text-xs font-mono overflow-auto max-h-36 border">
                 {SAMPLE_SCHEMA}
               </pre>
             )}
@@ -218,7 +253,7 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
               value={importJson}
               onChange={(e) => setImportJson(e.target.value)}
               placeholder='{"models": [...], "relationships": [...]}'
-              className="h-64 font-mono text-sm"
+              className="h-48 font-mono text-sm"
             />
           </div>
           
@@ -235,6 +270,6 @@ export function Toolbar({ onAddRelationship, onShare, inspectorOpen, onToggleIns
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </TooltipProvider>
   )
 }
