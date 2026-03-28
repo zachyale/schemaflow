@@ -3,7 +3,6 @@
 import { Database, Table } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSchema } from '@/lib/schema-store'
-import { ScrollArea } from '@/components/ui/scroll-area'
 
 export function ModelSidebar() {
   const { state, dispatch } = useSchema()
@@ -34,7 +33,7 @@ export function ModelSidebar() {
         </span>
       </div>
 
-      <ScrollArea className="flex-1">
+      <div className="flex-1 overflow-y-auto">
         <div className="p-2">
           {state.schema.models.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-4">
@@ -66,7 +65,7 @@ export function ModelSidebar() {
             })
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Relationships summary */}
       <div className="border-t px-4 py-3">
