@@ -1,6 +1,6 @@
 'use client'
 
-import { useSchema } from '@/lib/schema-store'
+import { useSchema, getActiveView } from '@/lib/schema-store'
 import type { Model, Relationship } from '@/lib/schema-types'
 
 function getFieldPosition(
@@ -131,12 +131,13 @@ function RelationshipLine({ relationship, fromModel, toModel }: RelationshipLine
 
 export function RelationshipLines() {
   const { state } = useSchema()
+  const activeView = getActiveView(state)
 
   return (
     <>
-      {state.schema.relationships.map((relationship) => {
-        const fromModel = state.schema.models.find((m) => m.id === relationship.fromModelId)
-        const toModel = state.schema.models.find((m) => m.id === relationship.toModelId)
+      {activeView.schema.relationships.map((relationship) => {
+        const fromModel = activeView.schema.models.find((m) => m.id === relationship.fromModelId)
+        const toModel = activeView.schema.models.find((m) => m.id === relationship.toModelId)
 
         if (!fromModel || !toModel) return null
 

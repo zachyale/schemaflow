@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useSchema, generateId } from '@/lib/schema-store'
+import { useSchema, generateId, getActiveView } from '@/lib/schema-store'
 import { RELATIONSHIP_TYPES } from '@/lib/schema-types'
 import type { RelationshipType, Relationship } from '@/lib/schema-types'
 import { Button } from '@/components/ui/button'
@@ -29,14 +29,15 @@ interface AddRelationshipDialogProps {
 
 export function AddRelationshipDialog({ open, onOpenChange }: AddRelationshipDialogProps) {
   const { state, dispatch } = useSchema()
+  const activeView = getActiveView(state)
   const [fromModelId, setFromModelId] = useState('')
   const [fromFieldId, setFromFieldId] = useState('')
   const [toModelId, setToModelId] = useState('')
   const [toFieldId, setToFieldId] = useState('')
   const [type, setType] = useState<RelationshipType>('many-to-one')
 
-  const fromModel = state.schema.models.find((m) => m.id === fromModelId)
-  const toModel = state.schema.models.find((m) => m.id === toModelId)
+  const fromModel = activeView.schema.models.find((m) => m.id === fromModelId)
+  const toModel = activeView.schema.models.find((m) => m.id === toModelId)
 
   const fromFields = useMemo(() => fromModel?.fields || [], [fromModel])
   const toFields = useMemo(() => toModel?.fields || [], [toModel])
@@ -107,7 +108,7 @@ export function AddRelationshipDialog({ open, onOpenChange }: AddRelationshipDia
                   <SelectValue placeholder="Select model" />
                 </SelectTrigger>
                 <SelectContent>
-                  {state.schema.models.map((model) => (
+                  {activeView.schema.models.map((model) => (
                     <SelectItem key={model.id} value={model.id}>
                       {model.name}
                     </SelectItem>
@@ -159,7 +160,7 @@ export function AddRelationshipDialog({ open, onOpenChange }: AddRelationshipDia
                   <SelectValue placeholder="Select model" />
                 </SelectTrigger>
                 <SelectContent>
-                  {state.schema.models.map((model) => (
+                  {activeView.schema.models.map((model) => (
                     <SelectItem key={model.id} value={model.id}>
                       {model.name}
                     </SelectItem>

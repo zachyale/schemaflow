@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Download, Link2, PanelRight, Plus, RotateCcw, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useSchema, generateId, validateSchema } from '@/lib/schema-store'
+import { useSchema, generateId, validateSchema, getActiveView } from '@/lib/schema-store'
 import type { Model } from '@/lib/schema-types'
 import {
   Dialog,
@@ -24,6 +24,7 @@ interface ToolbarProps {
 
 export function Toolbar({ onAddRelationship, inspectorOpen, onToggleInspector }: ToolbarProps) {
   const { state, dispatch } = useSchema()
+  const activeView = getActiveView(state)
   const [importOpen, setImportOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
   const [importJson, setImportJson] = useState('')
@@ -34,8 +35,8 @@ export function Toolbar({ onAddRelationship, inspectorOpen, onToggleInspector }:
       id: generateId('model'),
       name: 'NewModel',
       position: {
-        x: 100 - state.canvasOffset.x + Math.random() * 100,
-        y: 100 - state.canvasOffset.y + Math.random() * 100,
+        x: 100 - activeView.canvasOffset.x + Math.random() * 100,
+        y: 100 - activeView.canvasOffset.y + Math.random() * 100,
       },
       fields: [
         {
@@ -78,7 +79,7 @@ export function Toolbar({ onAddRelationship, inspectorOpen, onToggleInspector }:
   }
 
   const handleDownload = () => {
-    const json = JSON.stringify(state.schema, null, 2)
+    const json = JSON.stringify(activeView.schema, null, 2)
     const blob = new Blob([json], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -89,7 +90,7 @@ export function Toolbar({ onAddRelationship, inspectorOpen, onToggleInspector }:
   }
 
   const handleCopyToClipboard = () => {
-    navigator.clipboard.writeText(JSON.stringify(state.schema, null, 2))
+    navigator.clipboard.writeText(JSON.stringify(activeView.schema, null, 2))
   }
 
   return (
@@ -184,7 +185,7 @@ export function Toolbar({ onAddRelationship, inspectorOpen, onToggleInspector }:
             </DialogDescription>
           </DialogHeader>
           <Textarea
-            value={JSON.stringify(state.schema, null, 2)}
+            value={JSON.stringify(activeView.schema, null, 2)}
             readOnly
             className="h-80 font-mono text-sm"
           />

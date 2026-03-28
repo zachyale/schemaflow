@@ -1,12 +1,13 @@
 'use client'
 
 import { useRef, useState, useCallback, useEffect } from 'react'
-import { useSchema } from '@/lib/schema-store'
+import { useSchema, getActiveView } from '@/lib/schema-store'
 import { ModelCard } from './model-card'
 import { RelationshipLines } from './relationship-lines'
 
 export function Canvas() {
   const { state, dispatch } = useSchema()
+  const activeView = getActiveView(state)
   const canvasRef = useRef<HTMLDivElement>(null)
   const backgroundRef = useRef<HTMLDivElement>(null)
   const [isPanning, setIsPanning] = useState(false)
@@ -22,20 +23,20 @@ export function Canvas() {
         const delta = -e.deltaY * 0.001
         dispatch({
           type: 'SET_CANVAS_SCALE',
-          scale: state.canvasScale + delta,
+          scale: activeView.canvasScale + delta,
         })
       } else {
         // Pan via scroll
         dispatch({
           type: 'SET_CANVAS_OFFSET',
           offset: {
-            x: state.canvasOffset.x - e.deltaX / state.canvasScale,
-            y: state.canvasOffset.y - e.deltaY / state.canvasScale,
+            x: activeView.canvasOffset.x - e.deltaX / activeView.canvasScale,
+            y: activeView.canvasOffset.y - e.deltaY / activeView.canvasScale,
           },
         })
       }
     },
-    [dispatch, state.canvasScale, state.canvasOffset]
+    [dispatch, activeView.canvasScale, activeView.canvasOffset]
   )
 
   const handleBackgroundMouseDown = useCallback(
@@ -76,20 +77,20 @@ export function Canvas() {
     (clientX: number, clientY: number) => {
       if (!isPanning) return
 
-      const dx = (clientX - panStart.x) / state.canvasScale
-      const dy = (clientY - panStart.y) / state.canvasScale
+      const dx = (clientX - panStart.x) / activeView.canvasScale
+      const dy = (clientY - panStart.y) / activeView.canvasScale
 
       dispatch({
         type: 'SET_CANVAS_OFFSET',
         offset: {
-          x: state.canvasOffset.x + dx,
-          y: state.canvasOffset.y + dy,
+          x: activeView.canvasOffset.x + dx,
+          y: activeView.canvasOffset.y + dy,
         },
       })
 
       setPanStart({ x: clientX, y: clientY })
     },
-    [isPanning, panStart, state.canvasScale, state.canvasOffset, dispatch]
+    [isPanning, panStart, activeView.canvasScale, activeView.canvasOffset, dispatch]
   )
 
   const handleMouseMove = useCallback(
@@ -116,12 +117,12 @@ export function Canvas() {
         const delta = (distance - lastPinchDistance) * 0.005
         dispatch({
           type: 'SET_CANVAS_SCALE',
-          scale: state.canvasScale + delta,
+          scale: activeView.canvasScale + delta,
         })
         setLastPinchDistance(distance)
       }
     },
-    [isPanning, lastPinchDistance, handlePointerMove, dispatch, state.canvasScale]
+    [isPanning, lastPinchDistance, handlePointerMove, dispatch, activeView.canvasScale]
   )
 
   const handlePointerUp = useCallback(() => {
@@ -163,8 +164,8 @@ export function Canvas() {
         className="absolute inset-0"
         style={{
           backgroundImage: `radial-gradient(circle, var(--border) 1px, transparent 1px)`,
-          backgroundSize: `${20 * state.canvasScale}px ${20 * state.canvasScale}px`,
-          backgroundPosition: `${state.canvasOffset.x * state.canvasScale}px ${state.canvasOffset.y * state.canvasScale}px`,
+          backgroundSize: `${20 * activeView.canvasScale}px ${20 * activeView.canvasScale}px`,
+          backgroundPosition: `${activeView.canvasOffset.x * activeView.canvasScale}px ${activeView.canvasOffset.y * activeView.canvasScale}px`,
           touchAction: 'none',
         }}
         onMouseDown={handleBackgroundMouseDown}
@@ -175,7 +176,7 @@ export function Canvas() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          transform: `scale(${state.canvasScale}) translate(${state.canvasOffset.x}px, ${state.canvasOffset.y}px)`,
+          transform: `scale(${activeView.canvasScale}) translate(${activeView.canvasOffset.x}px, ${activeView.canvasOffset.y}px)`,
           transformOrigin: 'top left',
         }}
       >
@@ -188,7 +189,7 @@ export function Canvas() {
 
         {/* Model cards layer */}
         <div className="pointer-events-auto">
-          {state.schema.models.map((model) => (
+          {activeView.schema.models.map((model) => (
             <ModelCard key={model.id} model={model} />
           ))}
         </div>
@@ -196,7 +197,7 @@ export function Canvas() {
 
       {/* Zoom indicator */}
       <div className="absolute bottom-4 right-4 rounded bg-secondary px-2 py-1 text-xs text-muted-foreground pointer-events-none">
-        {Math.round(state.canvasScale * 100)}%
+        {Math.round(activeView.canvasScale * 100)}%
       </div>
     </div>
   )
