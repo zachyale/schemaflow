@@ -50,6 +50,44 @@ export function InspectorPanel() {
     return activeView.schema.models.find((m) => m.id === modelId) ?? null
   }, [activeView.schema.models, currentNode])
 
+  const relatedTableLinks = useMemo(() => {
+    if (!currentModel) return []
+
+    return activeView.schema.relationships
+      .filter(
+        (rel) => rel.fromModelId === currentModel.id || rel.toModelId === currentModel.id
+      )
+      .map((rel) => {
+        const isOutgoing = rel.fromModelId === currentModel.id
+        const relatedModelId = isOutgoing ? rel.toModelId : rel.fromModelId
+        const relatedFieldId = isOutgoing ? rel.toFieldId : rel.fromFieldId
+        const localFieldId = isOutgoing ? rel.fromFieldId : rel.toFieldId
+
+        const relatedModel = activeView.schema.models.find((m) => m.id === relatedModelId)
+        const localField = currentModel.fields.find((f) => f.id === localFieldId)
+        const relatedField = relatedModel?.fields.find((f) => f.id === relatedFieldId)
+
+        if (!relatedModel) return null
+
+        return {
+          id: rel.id,
+          label: relatedModel.name,
+          relationLabel: `${localField?.name ?? 'field'} -> ${relatedField?.name ?? 'field'}`,
+          relatedModelId,
+          relatedFieldId,
+          direction: isOutgoing ? 'outgoing' : 'incoming',
+        }
+      })
+      .filter(Boolean) as Array<{
+      id: string
+      label: string
+      relationLabel: string
+      relatedModelId: string
+      relatedFieldId: string
+      direction: 'outgoing' | 'incoming'
+    }>
+  }, [activeView.schema.models, activeView.schema.relationships, currentModel])
+
   if (!currentNode || !currentModel) {
     return null
   }
@@ -102,6 +140,50 @@ export function InspectorPanel() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <Label className="text-muted-foreground text-xs">
+                Related Tables ({relatedTableLinks.length})
+              </Label>
+              {relatedTableLinks.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No related tables.</p>
+              ) : (
+                <div className="space-y-1">
+                  {relatedTableLinks.map((item) => (
+                    <button
+                      key={item.id}
+                      className="flex w-full flex-col rounded bg-secondary/50 px-2 py-1.5 text-left hover:bg-secondary"
+                      onClick={() => {
+                        const relatedModel = activeView.schema.models.find((m) => m.id === item.relatedModelId)
+                        const hasField = relatedModel?.fields.some((f) => f.id === item.relatedFieldId)
+                        if (hasField) {
+                          dispatch({
+                            type: 'SET_SELECTION',
+                            selection: {
+                              type: 'field',
+                              modelId: item.relatedModelId,
+                              fieldId: item.relatedFieldId,
+                            },
+                          })
+                        } else {
+                          dispatch({
+                            type: 'SET_SELECTION',
+                            selection: { type: 'model', modelId: item.relatedModelId },
+                          })
+                        }
+                      }}
+                    >
+                      <span className="text-sm font-medium">{item.label}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {item.direction === 'outgoing' ? 'references' : 'referenced by'}: {item.relationLabel}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <Separator />
