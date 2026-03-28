@@ -17,9 +17,39 @@ export function ModelCard({ model }: ModelCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
   const isDraggingRef = useRef(false)
   const dragOffsetRef = useRef({ x: 0, y: 0 })
+  const draggedFieldIdRef = useRef<string | null>(null)
+  const fieldDragOverIdRef = useRef<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [draggedFieldId, setDraggedFieldId] = useState<string | null>(null)
+  const [fieldDragOverId, setFieldDragOverId] = useState<string | null>(null)
 
   const isSelected = state.selection?.type === 'model' && state.selection.modelId === model.id
+
+  const setFieldDragged = useCallback((value: string | null) => {
+    draggedFieldIdRef.current = value
+    setDraggedFieldId(value)
+  }, [])
+
+  const setFieldDragOver = useCallback((value: string | null) => {
+    fieldDragOverIdRef.current = value
+    setFieldDragOverId(value)
+  }, [])
+
+  const reorderFields = useCallback(
+    (sourceFieldId: string, targetFieldId: string) => {
+      if (sourceFieldId === targetFieldId) return
+      const currentOrder = model.fields.map((f) => f.id)
+      const sourceIndex = currentOrder.indexOf(sourceFieldId)
+      const targetIndex = currentOrder.indexOf(targetFieldId)
+      if (sourceIndex === -1 || targetIndex === -1) return
+
+      const nextOrder = [...currentOrder]
+      nextOrder.splice(sourceIndex, 1)
+      nextOrder.splice(targetIndex, 0, sourceFieldId)
+      dispatch({ type: 'REORDER_FIELDS', modelId: model.id, fieldIds: nextOrder })
+    },
+    [dispatch, model.fields, model.id]
+  )
 
   const startDrag = useCallback(
     (clientX: number, clientY: number) => {
@@ -199,6 +229,81 @@ export function ModelCard({ model }: ModelCardProps) {
     dispatch({ type: 'TOGGLE_MODEL_COLLAPSE', modelId: model.id })
   }
 
+  const handleFieldDragStart = (e: React.DragEvent<HTMLDivElement>, fieldId: string) => {
+    e.stopPropagation()
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', fieldId)
+    setFieldDragged(fieldId)
+    setFieldDragOver(null)
+  }
+
+  const handleFieldDragOver = (e: React.DragEvent<HTMLDivElement>, fieldId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (fieldId !== draggedFieldIdRef.current) {
+      setFieldDragOver(fieldId)
+    }
+  }
+
+  const handleFieldDrop = (e: React.DragEvent<HTMLDivElement>, targetFieldId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const sourceFieldId = draggedFieldIdRef.current
+    if (sourceFieldId && sourceFieldId !== targetFieldId) {
+      reorderFields(sourceFieldId, targetFieldId)
+    }
+    setFieldDragged(null)
+    setFieldDragOver(null)
+  }
+
+  const handleFieldDragEnd = () => {
+    setFieldDragged(null)
+    setFieldDragOver(null)
+  }
+
+  const handleFieldTouchReorderStart = (e: React.TouchEvent, fieldId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setFieldDragged(fieldId)
+    setFieldDragOver(null)
+
+    const handleMove = (moveEvent: TouchEvent) => {
+      if (moveEvent.touches.length !== 1 || !draggedFieldIdRef.current) return
+      moveEvent.preventDefault()
+      moveEvent.stopPropagation()
+
+      const touch = moveEvent.touches[0]
+      const element = document.elementFromPoint(touch.clientX, touch.clientY)
+      const fieldElement = element?.closest('[data-field]') as HTMLElement | null
+      const targetModelId = fieldElement?.dataset.modelId
+      const targetFieldId = fieldElement?.dataset.fieldId
+
+      if (targetModelId === model.id && targetFieldId && targetFieldId !== draggedFieldIdRef.current) {
+        setFieldDragOver(targetFieldId)
+      } else {
+        setFieldDragOver(null)
+      }
+    }
+
+    const handleEnd = () => {
+      const sourceFieldId = draggedFieldIdRef.current
+      const targetFieldId = fieldDragOverIdRef.current
+      if (sourceFieldId && targetFieldId && sourceFieldId !== targetFieldId) {
+        reorderFields(sourceFieldId, targetFieldId)
+      }
+
+      setFieldDragged(null)
+      setFieldDragOver(null)
+      window.removeEventListener('touchmove', handleMove)
+      window.removeEventListener('touchend', handleEnd)
+      window.removeEventListener('touchcancel', handleEnd)
+    }
+
+    window.addEventListener('touchmove', handleMove, { passive: false })
+    window.addEventListener('touchend', handleEnd)
+    window.addEventListener('touchcancel', handleEnd)
+  }
+
   return (
     <div
       ref={cardRef}
@@ -249,15 +354,25 @@ export function ModelCard({ model }: ModelCardProps) {
                 data-field
                 data-field-id={field.id}
                 data-model-id={model.id}
+                draggable
+                onDragStart={(e) => handleFieldDragStart(e, field.id)}
+                onDragOver={(e) => handleFieldDragOver(e, field.id)}
+                onDrop={(e) => handleFieldDrop(e, field.id)}
+                onDragEnd={handleFieldDragEnd}
                 onClick={(e) => handleFieldClick(field, e)}
                 className={cn(
                   'flex items-center gap-2 rounded px-2 py-1.5 text-sm cursor-pointer transition-colors',
                   isFieldSelected
                     ? 'bg-primary/20 text-foreground'
-                    : 'hover:bg-secondary text-foreground'
+                    : 'hover:bg-secondary text-foreground',
+                  draggedFieldId === field.id && 'opacity-50',
+                  fieldDragOverId === field.id && draggedFieldId !== field.id && 'ring-2 ring-primary/60'
                 )}
               >
-                <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50 cursor-grab" />
+                <GripVertical
+                  className="h-3.5 w-3.5 text-muted-foreground/50 cursor-grab"
+                  onTouchStart={(e) => handleFieldTouchReorderStart(e, field.id)}
+                />
                 <span className="flex-1 font-medium">{field.name}</span>
                 <span className="text-xs text-muted-foreground">{field.type}</span>
                 <div className="flex items-center gap-1">

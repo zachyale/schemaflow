@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { Plus, X, Check, GripVertical } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSchema, generateId } from '@/lib/schema-store'
@@ -14,7 +14,34 @@ export function ViewTabs() {
   const [editValue, setEditValue] = useState('')
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
-  const dragStartX = useRef<number>(0)
+  const draggedIdRef = useRef<string | null>(null)
+  const dragOverIdRef = useRef<string | null>(null)
+
+  const setDragged = useCallback((value: string | null) => {
+    draggedIdRef.current = value
+    setDraggedId(value)
+  }, [])
+
+  const setDragOver = useCallback((value: string | null) => {
+    dragOverIdRef.current = value
+    setDragOverId(value)
+  }, [])
+
+  const reorderViews = useCallback(
+    (sourceId: string, targetId: string) => {
+      if (sourceId === targetId) return
+      const currentOrder = state.views.map((v) => v.id)
+      const sourceIndex = currentOrder.indexOf(sourceId)
+      const targetIndex = currentOrder.indexOf(targetId)
+      if (sourceIndex === -1 || targetIndex === -1) return
+
+      const newOrder = [...currentOrder]
+      newOrder.splice(sourceIndex, 1)
+      newOrder.splice(targetIndex, 0, sourceId)
+      dispatch({ type: 'REORDER_VIEWS', viewIds: newOrder })
+    },
+    [dispatch, state.views]
+  )
 
   const handleAddView = () => {
     const newView: SchemaView = {
@@ -53,71 +80,78 @@ export function ViewTabs() {
   const handleDragStart = (e: React.DragEvent, viewId: string) => {
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', viewId)
-    setDraggedId(viewId)
-    dragStartX.current = e.clientX
+    setDragged(viewId)
   }
 
   const handleDragOver = (e: React.DragEvent, viewId: string) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     if (viewId !== draggedId) {
-      setDragOverId(viewId)
+      setDragOver(viewId)
     }
   }
 
   const handleDragLeave = () => {
-    setDragOverId(null)
+    setDragOver(null)
   }
 
   const handleDrop = (e: React.DragEvent, targetViewId: string) => {
     e.preventDefault()
     if (!draggedId || draggedId === targetViewId) {
-      setDraggedId(null)
-      setDragOverId(null)
+      setDragged(null)
+      setDragOver(null)
       return
     }
 
-    const currentOrder = state.views.map(v => v.id)
-    const draggedIndex = currentOrder.indexOf(draggedId)
-    const targetIndex = currentOrder.indexOf(targetViewId)
-
-    if (draggedIndex === -1 || targetIndex === -1) return
-
-    // Remove dragged item and insert at target position
-    const newOrder = [...currentOrder]
-    newOrder.splice(draggedIndex, 1)
-    newOrder.splice(targetIndex, 0, draggedId)
-
-    dispatch({ type: 'REORDER_VIEWS', viewIds: newOrder })
-    setDraggedId(null)
-    setDragOverId(null)
+    reorderViews(draggedId, targetViewId)
+    setDragged(null)
+    setDragOver(null)
   }
 
   const handleDragEnd = () => {
-    setDraggedId(null)
-    setDragOverId(null)
+    setDragged(null)
+    setDragOver(null)
   }
 
-  // Touch handlers for mobile drag
-  const handleTouchStart = (viewId: string) => {
-    setDraggedId(viewId)
-  }
+  const handleTouchReorderStart = (e: React.TouchEvent, viewId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragged(viewId)
+    setDragOver(null)
 
-  const handleTouchEnd = () => {
-    if (draggedId && dragOverId && draggedId !== dragOverId) {
-      const currentOrder = state.views.map(v => v.id)
-      const draggedIndex = currentOrder.indexOf(draggedId)
-      const targetIndex = currentOrder.indexOf(dragOverId)
+    const handleMove = (moveEvent: TouchEvent) => {
+      if (moveEvent.touches.length !== 1 || !draggedIdRef.current) return
+      moveEvent.preventDefault()
 
-      if (draggedIndex !== -1 && targetIndex !== -1) {
-        const newOrder = [...currentOrder]
-        newOrder.splice(draggedIndex, 1)
-        newOrder.splice(targetIndex, 0, draggedId)
-        dispatch({ type: 'REORDER_VIEWS', viewIds: newOrder })
+      const touch = moveEvent.touches[0]
+      const element = document.elementFromPoint(touch.clientX, touch.clientY)
+      const tabElement = element?.closest('[data-view-tab-id]') as HTMLElement | null
+      const targetViewId = tabElement?.dataset.viewTabId ?? null
+
+      if (targetViewId && targetViewId !== draggedIdRef.current) {
+        setDragOver(targetViewId)
+      } else {
+        setDragOver(null)
       }
     }
-    setDraggedId(null)
-    setDragOverId(null)
+
+    const handleEnd = () => {
+      const sourceId = draggedIdRef.current
+      const targetId = dragOverIdRef.current
+      if (sourceId && targetId && sourceId !== targetId) {
+        reorderViews(sourceId, targetId)
+      }
+
+      setDragged(null)
+      setDragOver(null)
+      window.removeEventListener('touchmove', handleMove)
+      window.removeEventListener('touchend', handleEnd)
+      window.removeEventListener('touchcancel', handleEnd)
+    }
+
+    window.addEventListener('touchmove', handleMove, { passive: false })
+    window.addEventListener('touchend', handleEnd)
+    window.addEventListener('touchcancel', handleEnd)
   }
 
   return (
@@ -125,6 +159,7 @@ export function ViewTabs() {
       {state.views.map((view) => (
         <div
           key={view.id}
+          data-view-tab-id={view.id}
           draggable={editingId !== view.id}
           onDragStart={(e) => handleDragStart(e, view.id)}
           onDragOver={(e) => handleDragOver(e, view.id)}
@@ -151,8 +186,7 @@ export function ViewTabs() {
               'opacity-60 transition-opacity',
               draggedId === view.id && 'cursor-grabbing'
             )}
-            onTouchStart={() => handleTouchStart(view.id)}
-            onTouchEnd={handleTouchEnd}
+            onTouchStart={(e) => handleTouchReorderStart(e, view.id)}
           />
           
           {editingId === view.id ? (
@@ -182,6 +216,10 @@ export function ViewTabs() {
                 onClick={(e) => {
                   e.stopPropagation()
                   e.preventDefault()
+                  if (view.id !== state.activeViewId) {
+                    dispatch({ type: 'SWITCH_VIEW', viewId: view.id })
+                    return
+                  }
                   handleStartRename(view)
                 }}
                 className="max-w-32 truncate rounded px-1 py-0.5 text-left hover:bg-secondary/70 transition-colors"

@@ -71,7 +71,7 @@ export function Canvas() {
         })
       }
     },
-    [dispatch, activeView.canvasScale, activeView.canvasOffset]
+    [dispatch, activeView.canvasScale, activeView.canvasOffset, zoomAtPoint]
   )
 
   const handleBackgroundMouseDown = useCallback(
@@ -205,7 +205,7 @@ export function Canvas() {
         className="absolute inset-0"
         style={{
           backgroundImage: `radial-gradient(circle, var(--border) 1px, transparent 1px)`,
-          backgroundSize: `${20 * activeView.canvasScale}px ${20 * activeView.canvasScale}px`,
+          backgroundSize: `20px 20px`,
           backgroundPosition: `${activeView.canvasOffset.x * activeView.canvasScale}px ${activeView.canvasOffset.y * activeView.canvasScale}px`,
           touchAction: 'none',
         }}
